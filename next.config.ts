@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
         hostname: 'localhost',
       },
     ],
+  turbopack: {
+    root: process.cwd(),
   },
 }
 
