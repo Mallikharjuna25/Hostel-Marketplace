@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { adminResolveDisputeSchema } from '@/lib/validation'
-import { updateTrustScore } from '@/lib/trustScore'
 
 export async function GET() {
   try {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { adminTrustAdjustSchema } from '@/lib/validation'
-import { updateTrustScore } from '@/lib/trustScore'
+import { applyTrustEvent } from '@/lib/trustScore'
 
 export async function PUT(
   req: NextRequest,
@@ -23,7 +23,7 @@ export async function PUT(
 
     const { delta, reason } = parsed.data
 
-    const result = await updateTrustScore(userId, 'ADMIN_ADJUSTMENT', delta, `Admin adjustment: ${reason}`)
+    const result = await applyTrustEvent(userId, 'ADMIN_ADJUSTMENT', `Admin adjustment: ${reason}`, delta)
 
     // Log admin action
     await prisma.adminAction.create({
