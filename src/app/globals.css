@@ -1,0 +1,293 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ─── Tailwind v4 Design Tokens ─────────────────────────── */
+@theme {
+  --color-background:  #F7F5F2;
+  --color-surface:     #FFFFFF;
+  --color-navy:        #1A1A2E;
+  --color-accent:      #E8602C;
+  --color-accent-dark: #CF4F20;
+  --color-donate:      #2D6A4F;
+  --color-muted:       #6B7280;
+  --color-border:      #E5E2DD;
+  --color-danger:      #DC2626;
+
+  --font-heading: 'Syne', sans-serif;
+  --font-body:    'Inter', sans-serif;
+
+  --radius-xl:  1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #F7F5F2;
+  color: #1A1A2E;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1A1A2E;
+}
+
+/* ─── Focus ──────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #E8602C;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F7F5F2; }
+::-webkit-scrollbar-thumb { background: #D1C9C0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+
+/* ─── Skeleton Shimmer ───────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #E5E2DD 25%, #EEE9E4 50%, #E5E2DD 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ─── Glassmorphism Card ─────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.25rem;
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1.25rem;
+}
+
+/* ─── Mode Badges ────────────────────────────────────────── */
+.badge-sell     { background:#FEF3EC; color:#E8602C; border:1px solid #FCDEC9; }
+.badge-lend     { background:#EBF4FF; color:#2563EB; border:1px solid #BFDBFE; }
+.badge-borrow   { background:#F0F9FF; color:#0369A1; border:1px solid #BAE6FD; }
+.badge-exchange { background:#F5F3FF; color:#7C3AED; border:1px solid #DDD6FE; }
+.badge-donate   { background:#ECFDF5; color:#2D6A4F; border:1px solid #A7F3D0; }
+.badge-knowledge{ background:#FFF7ED; color:#C2410C; border:1px solid #FED7AA; }
+
+/* ─── Condition Pills ────────────────────────────────────── */
+.condition-excellent { background:#ECFDF5; color:#065F46; }
+.condition-good      { background:#F0FDF4; color:#166534; }
+.condition-fair      { background:#FFFBEB; color:#92400E; }
+.condition-poor      { background:#FFF7ED; color:#9A3412; }
+.condition-needs-review { background:#FEF2F2; color:#991B1B; }
+
+/* ─── Button Variants ────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #E8602C;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(232,96,44,0.35);
+}
+.btn-primary:hover {
+  background: #CF4F20;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(232,96,44,0.45);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: transparent;
+  color: #1A1A2E;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #E5E2DD;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-ghost:hover {
+  border-color: #E8602C;
+  color: #E8602C;
+  background: #FEF3EC;
+}
+
+.btn-outline-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-outline-white:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.7);
+}
+
+/* ─── Card Hover Effect ──────────────────────────────────── */
+.card-hover {
+  transition: all 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(26,26,46,0.12);
+}
+
+/* ─── Input Styles ───────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #E5E2DD;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #1A1A2E;
+  background: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.input-field::placeholder { color: #9CA3AF; }
+.input-field:focus {
+  border-color: #E8602C;
+  box-shadow: 0 0 0 3px rgba(232,96,44,0.12);
+}
+
+/* ─── Section Labels ─────────────────────────────────────── */
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #E8602C;
+}
+
+/* ─── Trust Score Ring ───────────────────────────────────── */
+.trust-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: conic-gradient(#2D6A4F calc(var(--pct, 70) * 1%), #E5E2DD 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trust-ring-inner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: #1A1A2E;
+}
+
+/* ─── AI Badge ───────────────────────────────────────────── */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #FFF7ED, #FEF3EC);
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+
+/* ─── Hero Gradient ──────────────────────────────────────── */
+.hero-gradient {
+  background: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 50%, #1e1528 100%);
+}
+
+/* ─── Dot Grid Pattern ───────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ─── Fade In Animation ──────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.5s ease forwards; }
+.fade-up-1 { animation: fadeUp 0.5s 0.1s ease both; }
+.fade-up-2 { animation: fadeUp 0.5s 0.2s ease both; }
+.fade-up-3 { animation: fadeUp 0.5s 0.3s ease both; }
+.fade-up-4 { animation: fadeUp 0.5s 0.4s ease both; }
+
+/* ─── Pulse Dot ──────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+.pulse-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* ─── Floating Card Animation ────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+.float-card { animation: float 4s ease-in-out infinite; }
+
+/* ─── Gradient Text ──────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #E8602C, #F97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

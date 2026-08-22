@@ -1,0 +1,531 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum TransactionType {
+  SELL
+  LEND
+  EXCHANGE
+  DONATE
+  BORROW_REQUEST
+}
+
+enum ConditionLabel {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  NEEDS_REVIEW
+}
+
+enum ListingStatus {
+  DRAFT
+  AI_REVIEW
+  NEEDS_IMPROVEMENT
+  PENDING_APPROVAL
+  PUBLISHED
+  RESERVED
+  SOLD
+  LENT
+  BORROWED
+  EXCHANGED
+  DONATED
+  COMPLETED
+  EXPIRED
+  REMOVED
+  FLAGGED
+}
+
+enum AIJobStatus {
+  PENDING
+  COMPLETE
+  FAILED
+}
+
+enum PriceVerdict {
+  GOOD_VALUE
+  CONSIDER_NEGOTIATING
+  OVERPRICED
+}
+
+enum OfferType {
+  MONEY
+  EXCHANGE_ITEM
+  KNOWLEDGE
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+}
+
+enum TxStatus {
+  REQUESTED
+  NEGOTIATING
+  ACCEPTED
+  HANDOVER_PENDING
+  OTP_GENERATED
+  VERIFIED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  RESOLVED
+}
+
+enum SkillType {
+  SKILL
+  INTEREST
+  CLUB
+  SPORT
+  TECH
+  LANGUAGE
+  CERTIFICATION
+  VOLUNTEERING
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ProofStatus {
+  SUBMITTED
+  ACCEPTED
+  REVISION_REQUESTED
+  ISSUE_RAISED
+}
+
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  EVIDENCE_REQUIRED
+  RESOLVED
+  REJECTED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  OFFER
+  AGREEMENT_PROPOSAL
+  SYSTEM
+}
+
+// ─── Models ────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  phone        String
+  role         Role     @default(STUDENT)
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile         StudentProfile?
+  academicProfile AcademicProfile?
+  skills          Skill[]
+  listings        Listing[]
+
+  offersSent      Offer[]         @relation("OfferBuyer")
+  transactionsAsA Transaction[]   @relation("PartyA")
+  transactionsAsB Transaction[]   @relation("PartyB")
+
+  messages        Message[]
+  reviewsGiven    Review[]        @relation("ReviewAuthor")
+  reviewsReceived Review[]        @relation("ReviewSubject")
+  trustScore      TrustScore?
+  reportsMade     Report[]        @relation("Reporter")
+  notifications   Notification[]
+  donationApps    DonationApplication[]
+
+  @@map("users")
+}
+
+model StudentProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName     String
+  college      String
+  studentId    String
+  department   String
+  course       String
+  year         Int
+  semester     Int
+  hostel       String
+  block        String
+  room         String  // PRIVATE — NEVER serialize in public API responses
+  photoUrl     String?
+  publicFields Json    @default("{}") // whitelist of fields user opted into public view
+  bio          String?
+
+  @@map("student_profiles")
+}
+
+model AcademicProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cgpa                Float?
+  currentSemester     Int      @default(1)
+  previousPerformance Json     @default("[]") // { semester: number, gpa: number }[]
+  subjects            String[]
+  achievements        String[]
+
+  @@map("academic_profiles")
+}
+
+model Skill {
+  id     String    @id @default(cuid())
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   SkillType
+  name   String
+
+  @@map("skills")
+}
+
+model Listing {
+  id                  String          @id @default(cuid())
+  ownerId             String
+  owner               User            @relation(fields: [ownerId], references: [id])
+  title               String
+  category            String
+  description         String
+  aiDescription       String?
+  condition           ConditionLabel?
+  conditionScore      Int?
+  price               Int?            // in rupees (INR), integer
+  transactionType     TransactionType
+  availability        Json?           // { durationDays, returnDate, depositAmount }
+  location            String
+  distanceMeters      Int?
+  brand               String?
+  model               String?
+  originalPrice       Int?
+  purchaseDate        DateTime?
+  accessories         String?
+  usageDuration       String?
+  reasonForGiving     String?
+  status              ListingStatus   @default(DRAFT)
+  listingQualityScore Int?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  images          ProductImage[]
+  bills           ProductBill[]       // PRIVATE — never join into public API
+  aiAnalysis      AIAnalysis?
+  pricePrediction PricePrediction?
+  offers          Offer[]
+  donationApps    DonationApplication[]
+
+  @@map("listings")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  angle     String? // front|back|side|closeup|damage
+  order     Int
+
+  @@map("product_images")
+}
+
+model ProductBill {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String  // stored under /private/bills/... — NEVER expose on public routes
+  type      String  // bill|invoice|warranty
+
+  @@map("product_bills")
+}
+
+model AIAnalysis {
+  id              String         @id @default(cuid())
+  listingId       String         @unique
+  listing         Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  detectedProduct String
+  confidence      Float
+  conditionLabel  ConditionLabel
+  conditionScore  Int
+  detectedIssues  String[]
+  qualityScore    Int
+  provider        String
+  status          AIJobStatus    @default(COMPLETE)
+  createdAt       DateTime       @default(now())
+
+  @@map("ai_analyses")
+}
+
+model PricePrediction {
+  id            String       @id @default(cuid())
+  listingId     String       @unique
+  listing       Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  fairValueLow  Int
+  fairValueHigh Int
+  predicted     Int
+  verdict       PriceVerdict
+
+  @@map("price_predictions")
+}
+
+model Offer {
+  id           String      @id @default(cuid())
+  listingId    String
+  listing      Listing     @relation(fields: [listingId], references: [id])
+  buyerId      String
+  buyer        User        @relation("OfferBuyer", fields: [buyerId], references: [id])
+  amount       Int?
+  proposalType OfferType
+  status       OfferStatus @default(PENDING)
+  message      String?
+  createdAt    DateTime    @default(now())
+
+  @@map("offers")
+}
+
+model Transaction {
+  id                 String          @id @default(cuid())
+  listingId          String
+  partyAId           String          // owner/seller/lender/donor
+  partyA             User            @relation("PartyA", fields: [partyAId], references: [id])
+  partyBId           String          // buyer/borrower/receiver/knowledge provider
+  partyB             User            @relation("PartyB", fields: [partyBId], references: [id])
+  type               TransactionType
+  agreedValue        Json            // money amount OR exchanged item ref OR knowledge agreement ref
+  status             TxStatus        @default(REQUESTED)
+  otpCodeHash        String?         // bcrypt hash of 6-digit code — NEVER store or log plaintext
+  otpExpiresAt       DateTime?       // now() + 10 min on generation
+  otpUsed            Boolean         @default(false)
+  otpGenerationCount Int             @default(0) // max 3 — reject further generation
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  messages           Message[]
+  reports            Report[]
+  reviews            Review[]
+  lendingAgreement   LendingAgreement?
+  exchangeRequest    ExchangeRequest?
+  knowledgeAgreement KnowledgeAgreement?
+
+  @@map("transactions")
+}
+
+model LendingAgreement {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  durationDays  Int
+  returnDueAt   DateTime
+  deposit       Int?
+  rules         String?
+  returnedAt    DateTime?
+  damageReported Boolean    @default(false)
+
+  @@map("lending_agreements")
+}
+
+model BorrowRequest {
+  id                 String        @id @default(cuid())
+  listingId          String
+  requesterId        String
+  proposedReturnDate DateTime
+  status             RequestStatus @default(PENDING)
+
+  @@map("borrow_requests")
+}
+
+model ExchangeRequest {
+  id               String      @id @default(cuid())
+  transactionId    String      @unique
+  transaction      Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  iHaveListingId   String
+  iWantDescription String
+  matchedListingId String?
+
+  @@map("exchange_requests")
+}
+
+model KnowledgeAgreement {
+  id                          String      @id @default(cuid())
+  transactionId               String      @unique
+  transaction                 Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  itemProviderId              String
+  knowledgeProviderId         String
+  itemDescription             String
+  knowledgeDescription        String
+  sessionsCount               Int?
+  sessionMinutes              Int?
+  expectedWork                String
+  completionCriteria          String
+  deadline                    DateTime
+  evidenceRequirements        String
+  approvedByItemProvider      Boolean     @default(false)
+  approvedByKnowledgeProvider Boolean     @default(false)
+
+  proofs ProofSubmission[]
+
+  @@map("knowledge_agreements")
+}
+
+model ProofSubmission {
+  id            String             @id @default(cuid())
+  agreementId   String
+  agreement     KnowledgeAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  submittedById String
+  fileUrls      String[]
+  note          String?
+  aiCoverage    Int?
+  aiSummary     String?
+  status        ProofStatus        @default(SUBMITTED)
+  createdAt     DateTime           @default(now())
+
+  @@map("proof_submissions")
+}
+
+model DonationApplication {
+  id                String   @id @default(cuid())
+  listingId         String
+  listing           Listing  @relation(fields: [listingId], references: [id])
+  applicantId       String
+  applicant         User     @relation(fields: [applicantId], references: [id])
+  reason            String
+  relevantSubject   String?
+  academicRelevance Int?
+  needMatch         Int?
+  trustFactor       Int?
+  overallMatch      Int?
+  explanation       String?
+  selected          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@map("donation_applications")
+}
+
+model Message {
+  id            String       @id @default(cuid())
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  senderId      String
+  sender        User         @relation(fields: [senderId], references: [id])
+  content       String?
+  attachmentUrl String?
+  type          MessageType  @default(TEXT)
+  createdAt     DateTime     @default(now())
+
+  @@map("messages")
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  authorId      String
+  author        User        @relation("ReviewAuthor", fields: [authorId], references: [id])
+  subjectId     String
+  subject       User        @relation("ReviewSubject", fields: [subjectId], references: [id])
+  rating        Int         // 1–5
+  comment       String?
+  createdAt     DateTime    @default(now())
+
+  @@map("reviews")
+}
+
+model TrustScore {
+  id      String           @id @default(cuid())
+  userId  String           @unique
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score   Int              @default(50)
+  history TrustScoreEvent[]
+
+  @@map("trust_scores")
+}
+
+model TrustScoreEvent {
+  id            String     @id @default(cuid())
+  trustScoreId  String
+  trustScore    TrustScore @relation(fields: [trustScoreId], references: [id], onDelete: Cascade)
+  previousScore Int
+  newScore      Int
+  reason        String
+  createdAt     DateTime   @default(now())
+
+  @@map("trust_score_events")
+}
+
+model Report {
+  id            String       @id @default(cuid())
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  reporterId    String
+  reporter      User         @relation("Reporter", fields: [reporterId], references: [id])
+  category      String
+  description   String
+  evidenceUrls  String[]
+  status        ReportStatus @default(SUBMITTED)
+  createdAt     DateTime     @default(now())
+
+  dispute Dispute?
+
+  @@map("reports")
+}
+
+model Dispute {
+  id              String       @id @default(cuid())
+  reportId        String       @unique
+  report          Report       @relation(fields: [reportId], references: [id])
+  buyerStatement  String?
+  sellerStatement String?
+  adminDecision   String?
+  status          ReportStatus @default(SUBMITTED)
+  createdAt       DateTime     @default(now())
+
+  @@map("disputes")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("notifications")
+}
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  adminId    String
+  targetType String   // listing|user|dispute|report
+  targetId   String
+  action     String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@map("admin_actions")
+}
