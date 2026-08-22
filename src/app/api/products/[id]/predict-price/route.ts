@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { getPricePredictionService } from '@/lib/ai'
-import { PriceVerdict } from '@prisma/client'
+
+type PriceVerdict = 'GOOD_VALUE' | 'CONSIDER_NEGOTIATING' | 'OVERPRICED'
 
 export async function POST(
   req: NextRequest,
@@ -44,16 +45,17 @@ export async function POST(
       where: { listingId: id },
       create: {
         listingId: id,
-        fairValueLow: prediction.low,
-        fairValueHigh: prediction.high,
-        predicted: prediction.predicted,
-        verdict,
+        minPrice: prediction.low,
+        maxPrice: prediction.high,
+        fairPrice: prediction.predicted,
+        confidence: 0.85,
+        verdict: verdict as any,
       },
       update: {
-        fairValueLow: prediction.low,
-        fairValueHigh: prediction.high,
-        predicted: prediction.predicted,
-        verdict,
+        minPrice: prediction.low,
+        maxPrice: prediction.high,
+        fairPrice: prediction.predicted,
+        verdict: verdict as any,
       },
     })
 

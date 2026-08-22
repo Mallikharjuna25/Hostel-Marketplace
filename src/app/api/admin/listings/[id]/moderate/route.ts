@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { adminModerateListingSchema } from '@/lib/validation'
-import { ListingStatus } from '@prisma/client'
+
+type ListingStatus = 'DRAFT' | 'PUBLISHED' | 'IN_TRANSACTION' | 'COMPLETED' | 'FLAGGED' | 'REMOVED'
 
 export async function PUT(
   req: NextRequest,
@@ -23,15 +24,15 @@ export async function PUT(
 
     const { action, reason } = parsed.data
 
-    let newStatus: ListingStatus = ListingStatus.PUBLISHED
-    if (action === 'SUSPEND') newStatus = ListingStatus.REMOVED
-    if (action === 'FLAG') newStatus = ListingStatus.FLAGGED
-    if (action === 'APPROVE') newStatus = ListingStatus.PUBLISHED
-    if (action === 'REMOVE') newStatus = ListingStatus.REMOVED
+    let newStatus: ListingStatus = 'PUBLISHED'
+    if (action === 'SUSPEND') newStatus = 'REMOVED'
+    if (action === 'FLAG') newStatus = 'FLAGGED'
+    if (action === 'APPROVE') newStatus = 'PUBLISHED'
+    if (action === 'REMOVE') newStatus = 'REMOVED'
 
     const updated = await prisma.listing.update({
       where: { id },
-      data: { status: newStatus },
+      data: { status: newStatus as any },
     })
 
     // Log admin audit action

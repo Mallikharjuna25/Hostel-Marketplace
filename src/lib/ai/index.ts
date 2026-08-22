@@ -1,4 +1,4 @@
-import type { ConditionLabel } from '@prisma/client'
+export type ConditionLabel = 'NEW_SEALED' | 'LIKE_NEW' | 'GOOD' | 'FAIR' | 'POOR'
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 

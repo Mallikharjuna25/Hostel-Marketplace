@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
-import { TxStatus, TransactionType } from '@prisma/client'
 
 export async function POST(
   req: NextRequest,
@@ -47,9 +46,9 @@ export async function POST(
         listingId,
         partyAId: session.userId,         // donor
         partyBId: application.applicantId, // recipient
-        type: TransactionType.DONATE,
+        type: 'DONATE' as any,
         agreedValue: { type: 'donation', free: true },
-        status: TxStatus.HANDOVER_PENDING,
+        status: 'HANDOVER_PENDING' as any,
       },
     })
 

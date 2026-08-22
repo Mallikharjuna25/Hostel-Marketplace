@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { createReportSchema } from '@/lib/validation'
-import { ReportStatus } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,10 +29,10 @@ export async function POST(req: NextRequest) {
         category,
         description,
         evidenceUrls,
-        status: ReportStatus.SUBMITTED,
+        status: 'SUBMITTED' as any,
         dispute: transactionId ? {
           create: {
-            status: ReportStatus.SUBMITTED,
+            status: 'SUBMITTED' as any,
           },
         } : undefined,
       },
