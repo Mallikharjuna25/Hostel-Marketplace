@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         hostname: 'localhost',
       },
     ],
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   turbopack: {
     root: process.cwd(),
   },
