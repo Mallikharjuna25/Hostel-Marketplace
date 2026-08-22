@@ -81,8 +81,42 @@ export async function applyTrustEvent(
     createdAt: new Date(),
   })
   await user.save()
-
   return { previousScore, newScore, delta }
+}
+
+/**
+ * Universal trust score update helper compatible with all admin and transaction endpoints.
+ */
+export async function updateTrustScore(
+  userId: string,
+  eventOrType: string,
+  customDeltaOrReason?: number | string,
+  customReason?: string
+): Promise<{ previousScore: number; newScore: number; delta: number }> {
+  let delta: number | undefined
+  let reason = 'Trust score update'
+
+  if (typeof customDeltaOrReason === 'number') {
+    delta = customDeltaOrReason
+    reason = customReason || reason
+  } else if (typeof customDeltaOrReason === 'string') {
+    reason = customDeltaOrReason
+  }
+
+  let event: TrustEvent = 'ADMIN_ADJUSTMENT'
+  if (eventOrType === 'COMPLETED_TRANSACTION' || eventOrType === 'SALE_COMPLETED') {
+    event = 'SALE_COMPLETED'
+  } else if (eventOrType === 'PURCHASE_COMPLETED') {
+    event = 'PURCHASE_COMPLETED'
+  } else if (eventOrType === 'DISPUTE_WON') {
+    event = 'DISPUTE_WON'
+  } else if (eventOrType === 'DISPUTE_LOST') {
+    event = 'DISPUTE_LOST'
+  } else if (eventOrType in EVENT_DELTAS) {
+    event = eventOrType as TrustEvent
+  }
+
+  return applyTrustEvent(userId, event, reason, delta)
 }
 
 /**
