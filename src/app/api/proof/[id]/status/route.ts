@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
-import { updateTrustScore } from '@/lib/trustScore'
+import { applyTrustEvent } from '@/lib/trustScore'
 import { ProofStatus, TxStatus } from '@prisma/client'
 
 export async function PUT(
@@ -55,8 +55,8 @@ export async function PUT(
 
       // Increase trust scores
       await Promise.all([
-        updateTrustScore(proof.agreement.itemProviderId, 'COMPLETED_TRANSACTION'),
-        updateTrustScore(proof.agreement.knowledgeProviderId, 'COMPLETED_TRANSACTION'),
+        applyTrustEvent(proof.agreement.itemProviderId, 'SALE_COMPLETED', 'Transaction completed via accepted proof'),
+        applyTrustEvent(proof.agreement.knowledgeProviderId, 'KNOWLEDGE_SHARED', 'Transaction completed via accepted proof'),
       ])
     }
 

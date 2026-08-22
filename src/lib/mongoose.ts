@@ -5,9 +5,9 @@ import fs from 'fs'
 const DEFAULT_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hostel_marketplace'
 
 declare global {
-  // eslint-disable-next-line no-var
+
   var _mongooseConn: typeof mongoose | null
-  // eslint-disable-next-line no-var
+
   var _mongoServerInstance: any | null
 }
 

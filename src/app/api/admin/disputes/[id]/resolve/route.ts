@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
 import { adminResolveDisputeSchema } from '@/lib/validation'
-import { updateTrustScore } from '@/lib/trustScore'
+import { applyTrustEvent } from '@/lib/trustScore'
 
 export async function PUT(
   req: NextRequest,
@@ -49,7 +49,7 @@ export async function PUT(
 
     // Apply any specified trust score adjustments with audit logging
     for (const adj of trustAdjustments) {
-      await updateTrustScore(adj.userId, 'ADMIN_ADJUSTMENT', adj.delta, `Dispute resolution: ${adj.reason}`)
+      await applyTrustEvent(adj.userId, 'ADMIN_ADJUSTMENT', `Dispute resolution: ${adj.reason}`, adj.delta)
     }
 
     // Log admin action
