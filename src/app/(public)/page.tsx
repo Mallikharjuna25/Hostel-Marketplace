@@ -2,14 +2,17 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Navbar } from '@/components/ui/Navbar'
+import { Footer } from '@/components/ui/Footer'
+import { ProductCard } from '@/components/marketplace/ProductCard'
 
 const MODES = [
-  { emoji: '🏷️', title: 'Sell', color: '#E8602C', bg: 'rgba(232,96,44,0.1)', border: 'rgba(232,96,44,0.2)', desc: 'Sell textbooks, electronics & hostel gear with AI fair-price estimation.' },
-  { emoji: '🔄', title: 'Lend', color: '#2563EB', bg: 'rgba(37,99,235,0.1)', border: 'rgba(37,99,235,0.2)', desc: 'Lend mini-fridges, lab equipment on daily/monthly rates with deposit security.' },
-  { emoji: '📥', title: 'Borrow', color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.2)', desc: 'Need something for just a weekend? Post a borrow request to nearby blocks.' },
-  { emoji: '🔁', title: 'Swap', color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.2)', desc: '"I have Clean Code. I want Design Patterns." Direct item-for-item trade with dual-OTP.' },
-  { emoji: '🎁', title: 'Donate', color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', desc: 'Pass on semester books to juniors with AI-assisted Academic Relevance matching.' },
-  { emoji: '🧠', title: 'Knowledge', color: '#F97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.2)', desc: 'Exchange gear for tutoring or coding help. Formal agreement with AI proof-of-work.' },
+  { emoji: '🏷️', title: 'Sell', color: '#E8602C', bg: 'rgba(232,96,44,0.12)', border: 'rgba(232,96,44,0.25)', desc: 'Sell textbooks, electronics & hostel gear with AI fair-price estimation.' },
+  { emoji: '🔄', title: 'Lend', color: '#2563EB', bg: 'rgba(37,99,235,0.12)', border: 'rgba(37,99,235,0.25)', desc: 'Lend mini-fridges, lab equipment on daily/monthly rates with deposit security.' },
+  { emoji: '📥', title: 'Borrow', color: '#0EA5E9', bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.25)', desc: 'Need something for just a weekend? Post a borrow request to nearby blocks.' },
+  { emoji: '🔁', title: 'Swap', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.25)', desc: '"I have Clean Code. I want Design Patterns." Direct item-for-item trade with dual-OTP.' },
+  { emoji: '🎁', title: 'Donate', color: '#10B981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', desc: 'Pass on semester books to juniors with AI-assisted Academic Relevance matching.' },
+  { emoji: '🧠', title: 'Knowledge', color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.25)', desc: 'Exchange gear for tutoring or coding help. Formal agreement with AI proof-of-work.' },
 ]
 
 const LIVE_ITEMS = [
@@ -32,7 +35,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true)
-    const t = setInterval(() => setActive(p => (p + 1) % LIVE_ITEMS.length), 2800)
+    const t = setInterval(() => setActive(p => (p + 1) % LIVE_ITEMS.length), 3200)
     return () => clearInterval(t)
   }, [])
 
@@ -48,7 +51,27 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-        .hm-root { font-family: 'Inter', sans-serif; background: #F4F1ED; }
+        :root {
+          --hm-bg: #F4F1ED;
+          --hm-bg-alt: #FAF8F5;
+          --hm-card-bg: #FFFFFF;
+          --hm-card-border: #E5E2DD;
+          --hm-text-main: #111128;
+          --hm-text-muted: #6B7280;
+          --hm-step-num: rgba(232,96,44,0.12);
+        }
+
+        .dark {
+          --hm-bg: #0B0D16;
+          --hm-bg-alt: #101424;
+          --hm-card-bg: #131728;
+          --hm-card-border: #272E49;
+          --hm-text-main: #F4F5F7;
+          --hm-text-muted: #9CA3AF;
+          --hm-step-num: rgba(232,96,44,0.25);
+        }
+
+        .hm-root { font-family: 'Inter', sans-serif; background: var(--hm-bg); color: var(--hm-text-main); transition: background .3s, color .3s; }
 
         /* ── Hero ── */
         .hm-hero {
@@ -114,8 +137,8 @@ export default function LandingPage() {
 
         .hm-h1 {
           font-family: 'Syne', sans-serif; font-weight: 800;
-          font-size: clamp(3rem, 6vw, 5.5rem);
-          line-height: 1.0; color: white;
+          font-size: clamp(2.8rem, 5.5vw, 5.2rem);
+          line-height: 1.05; color: white;
           letter-spacing: -0.03em; margin: 0 0 24px;
         }
         .hm-h1-orange {
@@ -125,7 +148,7 @@ export default function LandingPage() {
         }
         .hm-sub {
           font-size: 1.05rem; line-height: 1.75;
-          color: rgba(255,255,255,0.55); max-width: 500px;
+          color: rgba(255,255,255,0.7); max-width: 500px;
           margin: 0 0 36px;
         }
         .hm-cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
@@ -137,7 +160,7 @@ export default function LandingPage() {
         }
         .hm-btn-primary {
           background: #E8602C; color: white;
-          box-shadow: 0 4px 24px rgba(232,96,44,0.45), 0 0 0 0 rgba(232,96,44,0);
+          box-shadow: 0 4px 24px rgba(232,96,44,0.45);
         }
         .hm-btn-primary:hover {
           background: #D4501E; transform: translateY(-2px);
@@ -154,147 +177,126 @@ export default function LandingPage() {
           transform: translateY(-2px);
         }
         .hm-checks { display: flex; gap: 20px; flex-wrap: wrap; }
-        .hm-check { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 500; }
+        .hm-check { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
         .hm-check-icon { color: #22C55E; font-weight: 700; }
 
         /* ── Live Board Card ── */
         .hm-live-card {
-          background: rgba(255,255,255,0.04);
+          background: rgba(255,255,255,0.05);
           backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.14);
           border-radius: 20px; padding: 24px;
+          box-shadow: 0 20px 48px rgba(0,0,0,0.35);
           animation: hm-float 5s ease-in-out infinite;
         }
-        @keyframes hm-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes hm-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         .hm-live-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
         .hm-live-title { font-family:'Syne',sans-serif; font-weight:700; color:white; font-size:15px; }
-        .hm-live-sub { color:rgba(255,255,255,0.35); font-size:11px; margin-top:2px; }
+        .hm-live-sub { color:rgba(255,255,255,0.45); font-size:11px; margin-top:2px; }
         .hm-live-badge {
           display:flex; align-items:center; gap:5px;
-          background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.2);
+          background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3);
           color:#4ADE80; font-size:10px; font-weight:700;
           padding:4px 10px; border-radius:100px;
         }
         .hm-live-item {
           padding:12px 14px; border-radius:12px;
           margin-bottom:8px; transition: all 0.4s ease;
-          border: 1px solid rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.08);
           display:flex; align-items:center; justify-content:space-between; gap:8px;
         }
         .hm-live-name { color:white; font-size:13px; font-weight:600; }
-        .hm-live-seller { color:rgba(255,255,255,0.4); font-size:11px; margin-top:2px; }
+        .hm-live-seller { color:rgba(255,255,255,0.5); font-size:11px; margin-top:2px; }
         .hm-live-price { color:white; font-size:13px; font-weight:700; text-align:right; }
         .hm-live-mode { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; text-align:right; margin-bottom:3px; }
         .hm-live-more {
-          display:block; text-align:center; color:#E8602C; font-size:12px; font-weight:600;
-          text-decoration:none; margin-top:12px;
-          padding:8px; border-radius:8px; background:rgba(232,96,44,0.08);
-          transition:background .2s;
+          display:block; text-align:center; color:#E8602C; font-size:12px; font-weight:700;
+          text-decoration:none; margin-top:14px;
+          padding:10px; border-radius:10px; background:rgba(232,96,44,0.12);
+          transition:all .2s; border:1px solid rgba(232,96,44,0.2);
         }
-        .hm-live-more:hover { background:rgba(232,96,44,0.15); }
+        .hm-live-more:hover { background:rgba(232,96,44,0.2); transform:translateY(-1px); }
 
         /* ── Fade in bottom ── */
         .hm-hero-fade {
-          position:absolute; bottom:0; left:0; right:0; height:160px;
-          background: linear-gradient(to bottom, transparent, #F4F1ED);
-          z-index:2;
+          position:absolute; bottom:0; left:0; right:0; height:120px;
+          background: linear-gradient(to bottom, transparent, var(--hm-bg));
+          z-index:2; pointer-events:none;
         }
 
         /* ── Sections ── */
-        .hm-section { padding: 80px 0; }
+        .hm-section { padding: 90px 0; transition: background .3s; }
+        .hm-section-main { background: var(--hm-bg); }
+        .hm-section-alt { background: var(--hm-bg-alt); }
         .hm-section-inner { max-width:1280px; margin:0 auto; padding:0 24px; }
         .hm-label {
-          display:block; font-size:11px; font-weight:700;
+          display:block; font-size:11px; font-weight:800;
           letter-spacing:.12em; text-transform:uppercase;
           color:#E8602C; margin-bottom:12px;
         }
         .hm-h2 {
           font-family:'Syne',sans-serif; font-weight:800;
-          font-size:clamp(1.8rem,4vw,2.8rem); color:#111128;
-          letter-spacing:-.02em; line-height:1.1; margin:0 0 12px;
+          font-size:clamp(2rem,4vw,2.8rem); color:var(--hm-text-main);
+          letter-spacing:-.02em; line-height:1.15; margin:0 0 12px;
         }
-        .hm-lead { color:#6B7280; font-size:1rem; line-height:1.7; max-width:520px; margin:0; }
+        .hm-lead { color:var(--hm-text-muted); font-size:1rem; line-height:1.7; max-width:540px; margin:0; }
 
         /* ── Mode Grid ── */
-        .hm-modes { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-top:48px; }
+        .hm-modes { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; margin-top:48px; }
         .hm-mode-card {
-          background:white; border-radius:16px; padding:28px;
-          border:1px solid #E8E3DC; cursor:pointer;
-          transition:all .25s ease;
+          background: var(--hm-card-bg); border-radius: 20px; padding: 28px;
+          border: 1px solid var(--hm-card-border); cursor: pointer;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+          transition: all .25s ease;
         }
-        .hm-mode-card:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(17,17,40,.1); border-color:transparent; }
-        .hm-mode-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:16px; }
-        .hm-mode-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.05rem; color:#111128; margin-bottom:8px; }
-        .hm-mode-desc { color:#6B7280; font-size:.83rem; line-height:1.7; margin-bottom:14px; }
-        .hm-mode-link { font-size:.78rem; font-weight:700; text-decoration:none; transition:gap .15s; display:inline-flex; align-items:center; gap:4px; }
-        .hm-mode-link:hover { gap:8px; }
-
-        /* ── Listings Grid ── */
-        .hm-listings { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:40px; }
-        .hm-listing-card {
-          background:white; border-radius:16px; overflow:hidden;
-          border:1px solid #E8E3DC; text-decoration:none; display:block;
-          transition:all .25s ease;
-        }
-        .hm-listing-card:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(17,17,40,.1); border-color:transparent; }
-        .hm-listing-thumb { height:160px; display:flex; align-items:center; justify-content:center; font-size:3rem; background:#F4F1ED; }
-        .hm-listing-body { padding:16px; }
-        .hm-listing-badge { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:3px 8px; border-radius:100px; margin-bottom:8px; }
-        .hm-listing-title { font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; color:#111128; margin-bottom:12px; line-height:1.3; }
-        .hm-listing-footer { display:flex; align-items:center; justify-content:space-between; }
-        .hm-listing-price { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; }
-        .hm-listing-trust { font-size:.7rem; color:#9CA3AF; }
+        .hm-mode-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.1); border-color: #E8602C; }
+        .hm-mode-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 16px; }
+        .hm-mode-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--hm-text-main); margin-bottom: 8px; }
+        .hm-mode-desc { color: var(--hm-text-muted); font-size: .85rem; line-height: 1.7; margin-bottom: 16px; }
+        .hm-mode-link { font-size: .82rem; font-weight: 700; text-decoration: none; transition: gap .15s; display: inline-flex; align-items: center; gap: 4px; }
+        .hm-mode-link:hover { gap: 8px; }
 
         /* ── Steps ── */
         .hm-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; margin-top:48px; }
         .hm-step {
-          background:white; border-radius:20px; padding:32px;
-          border:1px solid #E8E3DC; position:relative; overflow:hidden;
+          background: var(--hm-card-bg); border-radius: 20px; padding: 32px;
+          border: 1px solid var(--hm-card-border); position: relative; overflow: hidden;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+          transition: all .25s ease;
         }
+        .hm-step:hover { transform: translateY(-4px); border-color: #E8602C; box-shadow: 0 16px 40px rgba(0,0,0,0.08); }
         .hm-step::before {
           content:''; position:absolute; top:0; left:0; right:0; height:3px;
           background:linear-gradient(90deg,#E8602C,#F97316);
         }
         .hm-step-num {
-          position:absolute; top:20px; right:20px;
-          font-family:'Syne',sans-serif; font-weight:800; font-size:2.5rem;
-          color:rgba(17,17,40,.05); line-height:1;
+          position: absolute; top: 16px; right: 20px;
+          font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.8rem;
+          color: var(--hm-step-num); user-select: none;
         }
-        .hm-step-icon { font-size:2rem; margin-bottom:16px; }
-        .hm-step-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.05rem; color:#111128; margin-bottom:10px; }
-        .hm-step-desc { color:#6B7280; font-size:.84rem; line-height:1.75; }
+        .hm-step-icon { font-size: 2rem; margin-bottom: 16px; }
+        .hm-step-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--hm-text-main); margin-bottom: 10px; }
+        .hm-step-desc { color: var(--hm-text-muted); font-size: .85rem; line-height: 1.7; }
 
-        /* ── Dark Stats ── */
-        .hm-dark {
-          background:linear-gradient(135deg,#080816 0%,#111128 60%,#1a0d24 100%);
-          position:relative; overflow:hidden;
+        /* ── Dark section stats ── */
+        .hm-dark-section {
+          background: #080816; position: relative; overflow: hidden;
+          padding: 90px 0; color: white;
         }
-        .hm-stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:32px; text-align:center; }
-        .hm-stat-val { font-family:'Syne',sans-serif; font-weight:800; font-size:clamp(2rem,4vw,3rem); color:white; line-height:1; }
-        .hm-stat-label { color:rgba(255,255,255,.4); font-size:.8rem; margin-top:8px; font-weight:500; }
+        .hm-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; margin-bottom: 60px; }
+        .hm-stat-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.8rem; color: white; line-height: 1; margin-bottom: 8px; }
+        .hm-stat-label { font-size: 13px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
         .hm-trust-box {
-          margin-top:48px; padding:32px; border-radius:20px;
-          background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
-          display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 20px; padding: 36px; display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap;
         }
-
-        /* ── Footer ── */
-        .hm-footer { background:#060612; padding:56px 0 28px; }
-        .hm-footer-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:40px; margin-bottom:40px; }
-        .hm-footer-col-title { color:rgba(255,255,255,.25); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; margin-bottom:14px; }
-        .hm-footer-link { display:block; color:rgba(255,255,255,.4); font-size:.78rem; margin-bottom:8px; text-decoration:none; transition:color .15s; }
-        .hm-footer-link:hover { color:rgba(255,255,255,.8); }
-        .hm-footer-divider { border:none; border-top:1px solid rgba(255,255,255,.07); margin:0 0 20px; }
-        .hm-footer-bottom { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
-
-        /* ── Navbar padding (fixed 64px) ── */
-        .hm-navbar-spacer { height: 64px; }
       `}</style>
 
       <div className="hm-root">
+        <Navbar />
 
         {/* ══════════════════════════════════════════════════
-            HERO
+            HERO SECTION
         ══════════════════════════════════════════════════ */}
         <section className="hm-hero">
           <div className="hm-dot-grid" />
@@ -303,7 +305,7 @@ export default function LandingPage() {
           <div className="hm-glow-3" />
 
           <div className="hm-hero-inner">
-            {/* Left */}
+            {/* Left Column */}
             <div>
               <div className="hm-tag">
                 <span className="hm-tag-dot" />
@@ -319,7 +321,7 @@ export default function LandingPage() {
 
               <p className="hm-sub">
                 Buy, sell, lend, borrow, exchange, or donate useful resources with verified students around your campus.{' '}
-                <em style={{ color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+                <em style={{ color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' }}>
                   "A student doesn't always need money — they may have a product, skills, time, or knowledge to offer."
                 </em>
               </p>
@@ -343,7 +345,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right: Live Board */}
+            {/* Right Column: Live Board */}
             <div className="hm-live-card" style={{ opacity: mounted ? 1 : 0, transition: 'opacity .5s' }}>
               <div className="hm-live-header">
                 <div>
@@ -362,14 +364,14 @@ export default function LandingPage() {
                   className="hm-live-item"
                   style={{
                     background: i === active ? item.bg : 'rgba(255,255,255,0.03)',
-                    borderColor: i === active ? `rgba(255,255,255,0.15)` : 'rgba(255,255,255,0.05)',
+                    borderColor: i === active ? `rgba(255,255,255,0.18)` : 'rgba(255,255,255,0.06)',
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="hm-live-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name}
                     </div>
-                    <div className="hm-live-seller">{item.seller} · Trust {item.trust}</div>
+                    <div className="hm-live-seller">{item.seller} · Trust {item.trust}/100</div>
                   </div>
                   <div style={{ flexShrink: 0, textAlign: 'right' }}>
                     <div className="hm-live-mode" style={{ color: item.c }}>{item.badge}</div>
@@ -388,9 +390,9 @@ export default function LandingPage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            6 MODES
+            6 MODES SECTION
         ══════════════════════════════════════════════════ */}
-        <section className="hm-section" style={{ background: '#F4F1ED' }}>
+        <section className="hm-section hm-section-main">
           <div className="hm-section-inner">
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
               <div>
@@ -421,16 +423,16 @@ export default function LandingPage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            FEATURED LISTINGS (from DB)
+            FEATURED LISTINGS SECTION
         ══════════════════════════════════════════════════ */}
         {listings.length > 0 && (
-          <section className="hm-section" style={{ background: 'white' }}>
+          <section className="hm-section hm-section-alt">
             <div className="hm-section-inner">
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 32 }}>
                 <div>
                   <span className="hm-label">Verified campus resources</span>
                   <h2 className="hm-h2">Featured Listings</h2>
-                  <p className="hm-lead" style={{ maxWidth: 420, marginTop: 4 }}>
+                  <p className="hm-lead">
                     Real items listed by verified students in nearby hostel blocks.
                   </p>
                 </div>
@@ -439,49 +441,34 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="hm-listings">
-                {listings.slice(0, 6).map((l: any) => {
-                  const modeEmoji: Record<string, string> = { SELL: '🏷️', LEND: '🔄', BORROW: '📥', EXCHANGE: '🔁', DONATE: '🎁', KNOWLEDGE: '🧠' }
-                  const modeBadge: Record<string, { bg: string; color: string }> = {
-                    SELL:      { bg: '#FEF3EC', color: '#E8602C' },
-                    LEND:      { bg: '#EBF4FF', color: '#2563EB' },
-                    BORROW:    { bg: '#F0F9FF', color: '#0EA5E9' },
-                    EXCHANGE:  { bg: '#F5F3FF', color: '#8B5CF6' },
-                    DONATE:    { bg: '#ECFDF5', color: '#10B981' },
-                    KNOWLEDGE: { bg: '#FFF7ED', color: '#F97316' },
-                  }
-                  const mb = modeBadge[l.mode] || { bg: '#F4F1ED', color: '#6B7280' }
-                  return (
-                    <Link key={l.id} href={`/products/${l.id}`} className="hm-listing-card">
-                      <div className="hm-listing-thumb">
-                        {modeEmoji[l.mode] || '📦'}
-                      </div>
-                      <div className="hm-listing-body">
-                        <span className="hm-listing-badge" style={{ background: mb.bg, color: mb.color }}>
-                          {l.mode}
-                        </span>
-                        <div className="hm-listing-title">{l.title}</div>
-                        <div className="hm-listing-footer">
-                          <span className="hm-listing-price" style={{ color: l.mode === 'DONATE' ? '#10B981' : '#111128' }}>
-                            {l.mode === 'DONATE' ? 'Free' : l.priceInr ? `₹${l.priceInr.toLocaleString('en-IN')}` : 'Negotiate'}
-                          </span>
-                          <span className="hm-listing-trust">Trust {l.seller?.trustScore?.score ?? 80}/100</span>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listings.slice(0, 6).map((l: any) => (
+                  <ProductCard
+                    key={l.id}
+                    id={l.id}
+                    title={l.title}
+                    category={l.category}
+                    priceInr={l.priceInr}
+                    mode={l.mode}
+                    condition={l.condition}
+                    hostel={l.hostel}
+                    block={l.block}
+                    images={l.images}
+                    seller={l.seller}
+                    aiVerified={l.aiVerified}
+                  />
+                ))}
               </div>
             </div>
           </section>
         )}
 
         {/* ══════════════════════════════════════════════════
-            HOW IT WORKS
+            HOW IT WORKS SECTION
         ══════════════════════════════════════════════════ */}
-        <section className="hm-section" style={{ background: '#F4F1ED' }}>
+        <section className="hm-section hm-section-main">
           <div className="hm-section-inner">
-            <div style={{ textAlign: 'center', maxWidth: 600, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto' }}>
               <span className="hm-label">Secure 3-Step Process</span>
               <h2 className="hm-h2">How Handover &amp; OTP Work</h2>
               <p className="hm-lead" style={{ margin: '12px auto 0' }}>
@@ -498,15 +485,37 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+
+            <div style={{ textAlign: 'center', marginTop: '40px' }}>
+              <Link
+                href="/how-it-works"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  background: 'rgba(232,96,44,0.1)',
+                  color: '#E8602C',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  border: '1px solid rgba(232,96,44,0.25)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                ⚡ Explore Interactive Handover &amp; Trust Score Simulator →
+              </Link>
+            </div>
           </div>
         </section>
 
         {/* ══════════════════════════════════════════════════
-            TRUST STATS (dark)
+            CAMPUS TRUST & STATS SECTION
         ══════════════════════════════════════════════════ */}
-        <section className="hm-dark hm-section">
-          <div className="hm-dot-grid" style={{ position: 'absolute', inset: 0, opacity: 0.5 }} />
-          <div className="hm-section-inner" style={{ position: 'relative' }}>
+        <section className="hm-dark-section">
+          <div className="hm-dot-grid" style={{ opacity: 0.5 }} />
+          <div className="hm-section-inner" style={{ position: 'relative', zIndex: 1 }}>
             <div className="hm-stats-grid">
               {[
                 { v: '2,400+', l: 'Verified Students' },
@@ -522,12 +531,12 @@ export default function LandingPage() {
             </div>
 
             <div className="hm-trust-box">
-              <div style={{ flex: 1, minWidth: 260 }}>
-                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, color: 'white', fontSize: '1.2rem', marginBottom: 12 }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, color: 'white', fontSize: '1.4rem', marginBottom: 12 }}>
                   Trust &amp; Security First
                 </h3>
-                <p style={{ color: 'rgba(255,255,255,.5)', fontSize: '.85rem', lineHeight: 1.75, marginBottom: 16 }}>
-                  Every user is an ID-verified student from an authorized college domain. Room numbers and phone numbers are private by default. Invoices are stored in private encrypted storage and never exposed publicly.
+                <p style={{ color: 'rgba(255,255,255,.65)', fontSize: '.9rem', lineHeight: 1.75, marginBottom: 20 }}>
+                  Every user is an ID-verified student from an authorized college domain. Room numbers and phone numbers are private by default. Invoices and receipts are stored in private encrypted storage.
                 </p>
                 <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                   {[
@@ -535,8 +544,8 @@ export default function LandingPage() {
                     { t: 'Immutable Audit Trail', s: 'Every trust change logged with date & reason' },
                   ].map(f => (
                     <div key={f.t}>
-                      <div style={{ color: '#E8602C', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em' }}>{f.t}</div>
-                      <div style={{ color: 'rgba(255,255,255,.35)', fontSize: '12px', marginTop: 3 }}>{f.s}</div>
+                      <div style={{ color: '#E8602C', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em' }}>{f.t}</div>
+                      <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '12px', marginTop: 3 }}>{f.s}</div>
                     </div>
                   ))}
                 </div>
@@ -548,60 +557,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════
-            FOOTER
-        ══════════════════════════════════════════════════ */}
-        <footer className="hm-footer">
-          <div className="hm-section-inner">
-            <div className="hm-footer-grid">
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E8602C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Syne',sans-serif", fontWeight: 800, color: 'white', fontSize: '14px' }}>H</div>
-                  <div>
-                    <div style={{ color: 'white', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: '14px' }}>Hostel Marketplace</div>
-                    <div style={{ color: 'rgba(255,255,255,.25)', fontSize: '10px', letterSpacing: '.1em', textTransform: 'uppercase' }}>Student Campus Network</div>
-                  </div>
-                </div>
-                <p style={{ color: 'rgba(255,255,255,.35)', fontSize: '13px', lineHeight: 1.7 }}>
-                  "Share What You Have. Get What You Need." A verified-student campus marketplace.
-                </p>
-              </div>
-              <div>
-                <div className="hm-footer-col-title">Trade Modes</div>
-                {['Sell (Fair Price AI)', 'Lend Daily/Monthly', 'Borrow Requests', 'Product ↔ Exchange', 'Free Donations', 'Knowledge Swap'].map(t => (
-                  <a key={t} href="/explore" className="hm-footer-link">{t}</a>
-                ))}
-              </div>
-              <div>
-                <div className="hm-footer-col-title">Safety</div>
-                {['Verified College Email', 'Single-Use OTP Handover', 'Inspection Checklist', 'Trust Score Audit Log', 'Private Invoices'].map(t => (
-                  <div key={t} className="hm-footer-link">{t}</div>
-                ))}
-              </div>
-              <div>
-                <div className="hm-footer-col-title">Campus Blocks</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {['Block A', 'Block B', 'Block C', 'Block D', 'Block E', 'Block H'].map(b => (
-                    <span key={b} style={{ background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.4)', fontSize: '11px', padding: '4px 9px', borderRadius: 6 }}>{b}</span>
-                  ))}
-                </div>
-                <div style={{ marginTop: 16, color: 'rgba(255,255,255,.25)', fontSize: '12px', lineHeight: 1.7 }}>
-                  Filter listings by hostel, block, or floor distance for hyper-local trades.
-                </div>
-              </div>
-            </div>
-
-            <hr className="hm-footer-divider" />
-            <div className="hm-footer-bottom">
-              <span style={{ color: 'rgba(255,255,255,.2)', fontSize: '12px' }}>© 2026 Hostel Marketplace. Built for university student communities.</span>
-              <div style={{ display: 'flex', gap: 16 }}>
-                <span style={{ color: 'rgba(255,255,255,.2)', fontSize: '12px' }}>₹ INR Currency</span>
-                <span style={{ color: 'rgba(255,255,255,.2)', fontSize: '12px' }}>AI Assist Active (Advisory Only)</span>
-              </div>
-            </div>
-          </div>
-        </footer>
-
+        <Footer />
       </div>
     </>
   )

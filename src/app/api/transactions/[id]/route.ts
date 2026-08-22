@@ -38,6 +38,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .sort({ createdAt: 1 })
       .lean()
 
+    const isSeller = txAny.sellerId._id?.toString() === user.userId
+    const isBuyer = txAny.buyerId._id?.toString() === user.userId
+
     const serialized = {
       id: txAny._id.toString(),
       status: txAny.status,
@@ -45,6 +48,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       price: txAny.agreedPriceInr,
       otpExpiry: txAny.otpExpiry,
       otpUsed: txAny.otpUsed,
+      sellerOtpCode: isSeller ? txAny.plainOtpCode : undefined,
+      isSeller,
+      isBuyer,
+      currentUserId: user.userId,
       sellerId: txAny.sellerId._id?.toString(),
       buyerId: txAny.buyerId._id?.toString(),
       completedAt: txAny.completedAt,

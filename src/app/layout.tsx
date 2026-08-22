@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 }
 
 import { Navbar } from '@/components/ui/Navbar'
+import { ThemeProvider } from '@/components/theme/ThemeProvider'
 
 export default function RootLayout({
   children,
@@ -25,7 +26,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className="dark"
+      data-theme="dark"
+      data-scroll-behavior="smooth"
+      style={{ colorScheme: 'dark', backgroundColor: '#0B0E17' }}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -34,9 +42,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body style={{ backgroundColor: '#F7F5F2', color: '#1A1A2E', fontFamily: "'Inter', sans-serif", WebkitFontSmoothing: 'antialiased', margin: 0, padding: 0 }}>
-        <Navbar />
-        {children}
+      <body className="min-h-screen bg-[#0B0E17] text-[#E2E8F0]" style={{ fontFamily: "'Inter', sans-serif", WebkitFontSmoothing: 'antialiased', margin: 0, padding: 0 }}>
+        <ThemeProvider>
+          <Navbar />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

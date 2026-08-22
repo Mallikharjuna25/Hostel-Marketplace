@@ -241,20 +241,20 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 max-w-xl mx-auto px-4 py-12 w-full" style={{ paddingTop: '80px' }}>
-        <div className="bg-white rounded-3xl border border-[#E5E2DD] p-8 shadow-sm space-y-6">
+        <div className="theme-card rounded-3xl p-8 shadow-2xl space-y-6">
           {/* Header */}
           <div className="text-center space-y-1">
             <span className="text-[11px] font-bold text-[#E8602C] uppercase tracking-wider">
               Student Registration
             </span>
-            <h1 className="font-heading font-extrabold text-2xl text-[#1A1A2E]">
+            <h1 className="font-heading font-extrabold text-2xl theme-title">
               {currentStep === 1 && 'Step 1: Account Credentials'}
               {currentStep === 2 && 'Step 2: Campus & Hostel Identity'}
               {currentStep === 3 && 'Step 3: Academic Profile'}
               {currentStep === 4 && 'Step 4: Skills & Interests'}
               {currentStep === 5 && 'Step 5: Student Email OTP'}
             </h1>
-            <p className="text-xs text-[#6B7280]">
+            <p className="text-xs theme-muted">
               Step {currentStep} of 5 · Keep your hostel network safe and verified.
             </p>
           </div>
@@ -265,14 +265,14 @@ export default function RegisterPage() {
               <div
                 key={s}
                 className={`h-1.5 rounded-full transition-colors ${
-                  s <= currentStep ? 'bg-[#E8602C]' : 'bg-[#E5E2DD]'
+                  s <= currentStep ? 'bg-[#E8602C]' : 'bg-[#272E49]'
                 }`}
               />
             ))}
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#DC2626]">
+            <div className="p-3 rounded-xl bg-[#FEF2F2] dark:bg-[#2A1414] border border-[#FECACA] dark:border-[#5A2020] text-xs text-[#DC2626]">
               {error}
             </div>
           )}

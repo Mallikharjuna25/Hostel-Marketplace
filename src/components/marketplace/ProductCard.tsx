@@ -44,14 +44,14 @@ export function ProductCard(props: ProductCardProps) {
 
   const modeBadgeStyle = (m: string) => {
     switch (m) {
-      case 'SELL': return { bg: '#FEF3EC', color: '#E8602C', label: 'FOR SALE' }
-      case 'LEND': return { bg: '#EBF4FF', color: '#2563EB', label: 'FOR LEND' }
+      case 'SELL': return { cls: 'badge-orange', label: 'FOR SALE' }
+      case 'LEND': return { cls: 'badge-blue', label: 'FOR LEND' }
       case 'BORROW':
-      case 'BORROW_REQUEST': return { bg: '#F0F9FF', color: '#0EA5E9', label: 'WANTED' }
-      case 'EXCHANGE': return { bg: '#F5F3FF', color: '#8B5CF6', label: 'SWAP' }
-      case 'DONATE': return { bg: '#ECFDF5', color: '#10B981', label: 'FREE DONATE' }
-      case 'KNOWLEDGE': return { bg: '#FFF7ED', color: '#F97316', label: 'KNOWLEDGE' }
-      default: return { bg: '#F4F1ED', color: '#6B7280', label: m }
+      case 'BORROW_REQUEST': return { cls: 'badge-blue', label: 'WANTED' }
+      case 'EXCHANGE': return { cls: 'badge-purple', label: 'SWAP' }
+      case 'DONATE': return { cls: 'badge-green', label: 'FREE DONATE' }
+      case 'KNOWLEDGE': return { cls: 'badge-orange', label: 'KNOWLEDGE' }
+      default: return { cls: 'badge-neutral', label: m }
     }
   }
 
@@ -69,217 +69,84 @@ export function ProductCard(props: ProductCardProps) {
     return '📦'
   }
 
+  const primaryImage = images && images.length > 0 ? images[0].url : null
+
   return (
     <Link
       href={`/products/${id}`}
-      style={{
-        display: 'block',
-        background: 'white',
-        borderRadius: '16px',
-        border: '1px solid #E8E3DC',
-        overflow: 'hidden',
-        textDecoration: 'none',
-        transition: 'all 0.25s ease',
-        boxShadow: '0 2px 8px rgba(17,17,40,0.04)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)'
-        e.currentTarget.style.boxShadow = '0 12px 30px rgba(17,17,40,0.1)'
-        e.currentTarget.style.borderColor = '#D8D2C8'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(17,17,40,0.04)'
-        e.currentTarget.style.borderColor = '#E8E3DC'
-      }}
+      className="group block theme-card rounded-2xl overflow-hidden text-decoration-none transition-all duration-200 hover:-translate-y-1 hover:border-[#E8602C] shadow-xs hover:shadow-md"
     >
       {/* Thumbnail */}
-      <div
-        style={{
-          height: 160,
-          background: 'linear-gradient(135deg, #FAF8F5 0%, #EFECE6 100%)',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {images && images.length > 0 && images[0]?.url ? (
+      <div className="relative h-44 w-full theme-card-alt flex items-center justify-center overflow-hidden border-b" style={{ borderColor: 'var(--border-color)' }}>
+        {primaryImage ? (
           <img
-            src={images[0].url}
+            src={primaryImage}
             alt={title}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <>
-            <div style={{ fontSize: '3rem', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.08))' }}>
-              {getEmoji(category, mode)}
-            </div>
-            <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 600, marginTop: 4 }}>
-              {category}
-            </span>
-          </>
-        )}
-
-        {/* Badges on Top */}
-        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <span
-            style={{
-              padding: '3px 8px',
-              borderRadius: 6,
-              fontSize: '10px',
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              background: badge.bg,
-              color: badge.color,
-            }}
-          >
-            {badge.label}
-          </span>
-          {condition && (
-            <span
-              style={{
-                padding: '3px 7px',
-                borderRadius: 6,
-                fontSize: '9px',
-                fontWeight: 700,
-                background: 'rgba(255,255,255,0.9)',
-                color: '#4B5563',
-                border: '1px solid #E5E2DD',
-              }}
-            >
-              {condition}
-            </span>
-          )}
-        </div>
-
-        {/* AI Checked indicator */}
-        {(aiAnalysis || aiVerified) && (
-          <div style={{ position: 'absolute', top: 12, right: 12 }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '3px 8px',
-                borderRadius: 100,
-                fontSize: '10px',
-                fontWeight: 700,
-                background: '#FFF8F3',
-                color: '#E8602C',
-                border: '1px solid #FCD8C5',
-                boxShadow: '0 2px 6px rgba(232,96,44,0.15)',
-              }}
-            >
-              ⚡ AI Verified
-            </span>
+          <div className="text-4xl select-none group-hover:scale-110 transition-transform duration-200">
+            {getEmoji(category, mode)}
           </div>
         )}
+
+        {/* Mode Tag Top-Left */}
+        <div className="absolute top-2.5 left-2.5">
+          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide shadow-xs ${badge.cls}`}>
+            {badge.label}
+          </span>
+        </div>
+
+        {/* Condition Tag Top-Right */}
+        <div className="absolute top-2.5 right-2.5">
+          <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold theme-card-alt theme-title border shadow-xs" style={{ borderColor: 'var(--border-color)' }}>
+            {condition}
+          </span>
+        </div>
       </div>
 
-      {/* Content */}
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h3
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            color: '#111128',
-            lineHeight: 1.3,
-            margin: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {title}
-        </h3>
+      {/* Card Body */}
+      <div className="p-4 space-y-3">
+        <div>
+          <div className="flex items-center justify-between text-[11px] theme-muted mb-1">
+            <span className="font-semibold">{category}</span>
+            <span>{locationText}</span>
+          </div>
 
-        {/* Price Row */}
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <h3 className="font-heading font-bold text-sm theme-title line-clamp-1 group-hover:text-[#E8602C] transition-colors">
+            {title}
+          </h3>
+        </div>
+
+        {/* Price & Value Row */}
+        <div className="flex items-baseline justify-between pt-1 border-t" style={{ borderColor: 'var(--border-color)' }}>
           <div>
             {mode === 'DONATE' ? (
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1rem', color: '#10B981' }}>
-                Free (Donate)
+              <span className="font-heading font-extrabold text-base text-[#10B981] dark:text-[#34D399]">
+                Free
               </span>
             ) : mode === 'EXCHANGE' ? (
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#8B5CF6' }}>
-                Trade / Swap
+              <span className="font-heading font-bold text-xs text-[#8B5CF6] dark:text-[#C084FC]">
+                Swap Trade
               </span>
-            ) : mode === 'KNOWLEDGE' ? (
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#F97316' }}>
-                Skill Exchange
-              </span>
-            ) : price !== null ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: '#111128' }}>
-                  ₹{Number(price).toLocaleString('en-IN')}
+            ) : mode === 'LEND' ? (
+              <div className="flex items-baseline gap-0.5">
+                <span className="font-heading font-extrabold text-base text-[#2563EB] dark:text-[#60A5FA]">
+                  ₹{price ?? 0}
                 </span>
-                {mode === 'LEND' && (
-                  <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>/day</span>
-                )}
+                <span className="text-[10px] theme-muted">/day</span>
               </div>
             ) : (
-              <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>Negotiable</span>
+              <span className="font-heading font-extrabold text-lg theme-title">
+                ₹{price ?? 0}
+              </span>
             )}
           </div>
 
-          <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500 }}>
-            {locationText}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            borderTop: '1px solid #F0EDE8',
-            paddingTop: 10,
-            marginTop: 4,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                background: '#111128',
-                color: 'white',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px',
-                fontWeight: 700,
-              }}
-            >
-              {sellerName.charAt(0)}
-            </span>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {sellerName.split(' ')[0]}
-            </span>
-          </div>
-
-          <div
-            style={{
-              padding: '2px 8px',
-              borderRadius: 100,
-              background: '#ECFDF5',
-              border: '1px solid #A7F3D0',
-              color: '#065F46',
-              fontSize: '10px',
-              fontWeight: 700,
-            }}
-          >
-            Trust {sellerTrust}/100
+          {/* Seller Trust Score */}
+          <div className="flex items-center gap-1.5 text-[11px] font-bold badge-green px-2.5 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#059669] dark:bg-[#34D399]" />
+            <span>Trust {sellerTrust}</span>
           </div>
         </div>
       </div>

@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
+import { AITradeChatbot } from '@/components/ai/AITradeChatbot'
 
 const STATUS_STEPS = [
   { id: 'ACCEPTED', label: 'Offer Accepted' },
-  { id: 'HANDOVER_PENDING', label: 'Handover Pending' },
-  { id: 'OTP_GENERATED', label: 'OTP Generated' },
+  { id: 'HANDOVER_PENDING', label: 'Handover Meetup' },
+  { id: 'OTP_VERIFICATION', label: 'OTP Verification' },
   { id: 'COMPLETED', label: 'Completed' },
 ]
 
@@ -25,28 +27,45 @@ export default function TransactionDetailPage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Role View Override (default matches actual logged-in user, but allows toggle for testing)
+  const [viewRole, setViewRole] = useState<'SELLER' | 'BUYER' | null>(null)
+
   // Chat State
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const prevMsgCountRef = useRef(0)
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
 
-  // OTP State
-  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null)
-  const [otpExpiresAt, setOtpExpiresAt] = useState<Date | null>(null)
-  const [buyerOtpInput, setBuyerOtpInput] = useState('')
+  // Seller OTP State
+  const [sellerOtp, setSellerOtp] = useState<string | null>(null)
+  const [generatingOtp, setGeneratingOtp] = useState(false)
+
+  // Buyer OTP State
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
   const [otpVerifying, setOtpVerifying] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
+  const [otpSuccessMsg, setOtpSuccessMsg] = useState<string | null>(null)
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Inspection Checklist State (for Buyer)
-  const [inspectedCondition, setInspectedCondition] = useState(false)
-  const [inspectedAccessories, setInspectedAccessories] = useState(false)
-  const [inspectedWorking, setInspectedWorking] = useState(false)
+  // 3-Point Inspection Checklist (Buyer)
+  const [itemMatches, setItemMatches] = useState(false)
+  const [conditionExpected, setConditionExpected] = useState(false)
+  const [accessoriesIncluded, setAccessoriesIncluded] = useState(false)
 
-  // Review Modal State
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewSubmitting, setReviewSubmitting] = useState(false)
-  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  // Payment Settlement (Buyer & Seller)
+  const [paymentMode, setPaymentMode] = useState<'UPI' | 'CASH' | 'SCHEDULED'>('UPI')
+  const [onlinePaid, setOnlinePaid] = useState(false)
+  const [scheduledDate, setScheduledDate] = useState('2026-09-01')
+  const [cashReceivedConfirmed, setCashReceivedConfirmed] = useState(false)
+  const [showPaymentGatewayModal, setShowPaymentGatewayModal] = useState(false)
+  const [gatewayProcessing, setGatewayProcessing] = useState(false)
+
+  const scrollToBottom = () => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -60,6 +79,11 @@ export default function TransactionDetailPage({
         const txData = await txRes.json()
         const tx = txData.transaction || txData
         setTransaction(tx)
+
+        if (tx.sellerOtpCode) {
+          setSellerOtp(tx.sellerOtpCode)
+        }
+
         if (tx.messages && tx.messages.length > 0) {
           setMessages(tx.messages)
         }
@@ -88,52 +112,99 @@ export default function TransactionDetailPage({
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 1500) // fast 1.5s sync for chat & OTP
+    const interval = setInterval(loadData, 2000)
     return () => clearInterval(interval)
   }, [id])
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages.length])
+  // Determine strict account role
+  const isSeller = Boolean(
+    currentUser?.id &&
+    (transaction?.sellerId === currentUser.id ||
+     transaction?.seller?.id === currentUser.id ||
+     transaction?.partyAId === currentUser.id ||
+     transaction?.isSeller === true)
+  )
 
-  // Seller generates OTP
+  // Handle Buyer OTP digit inputs
+  const handleDigitChange = (index: number, val: string) => {
+    const clean = val.replace(/\D/g, '').slice(-1)
+    const nextDigits = [...otpDigits]
+    nextDigits[index] = clean
+    setOtpDigits(nextDigits)
+
+    if (clean && index < 5) {
+      otpInputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  // Handle Paste for 6-digit OTP
+  const handlePasteOtp = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData('text').trim().replace(/\D/g, '')
+    if (pasted.length === 6) {
+      setOtpDigits(pasted.split(''))
+      otpInputRefs.current[5]?.focus()
+    }
+  }
+
+  // Generate OTP (Seller Action)
   const handleGenerateOTP = async () => {
-    setOtpError(null)
+    setGeneratingOtp(true)
     try {
       const res = await fetch(`/api/transactions/${id}/generate-otp`, { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        setGeneratedOtp(data.otp || data.otpCode)
-        if (data.expiresAt) setOtpExpiresAt(new Date(data.expiresAt))
+        setSellerOtp(data.otpCode || data.otp)
         loadData()
       } else {
-        setOtpError(data.error || 'Failed to generate OTP')
+        alert(data.error || 'Failed to generate OTP')
       }
     } catch {
-      setOtpError('Error generating OTP')
+      alert('Error generating OTP')
+    } finally {
+      setGeneratingOtp(false)
     }
   }
 
-  // Buyer verifies OTP
+  // Verify OTP (Buyer Action)
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault()
     setOtpError(null)
+    setOtpSuccessMsg(null)
+
+    const fullCode = otpDigits.join('')
+    if (fullCode.length !== 6) {
+      setOtpError('Please enter all 6 digits of the handover code.')
+      return
+    }
+
+    if (!itemMatches || !conditionExpected || !accessoriesIncluded) {
+      setOtpError('Please verify all 3 product checklist items before confirming handover.')
+      return
+    }
+
     setOtpVerifying(true)
     try {
       const res = await fetch(`/api/transactions/${id}/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp: buyerOtpInput.trim(), otpCode: buyerOtpInput.trim() }),
+        body: JSON.stringify({ otp: fullCode }),
       })
+
       const data = await res.json()
       if (res.ok) {
-        setBuyerOtpInput('')
+        setOtpSuccessMsg('🎉 Handover Verified! Trade completed and trust score updated.')
         loadData()
       } else {
-        setOtpError(data.error || 'Invalid OTP code')
+        setOtpError(data.error || 'Incorrect OTP code. Please ask the seller for their active code.')
       }
     } catch {
-      setOtpError('Error verifying OTP')
+      setOtpError('Failed to verify OTP. Please try again.')
     } finally {
       setOtpVerifying(false)
     }
@@ -142,69 +213,47 @@ export default function TransactionDetailPage({
   // Send Chat Message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim()) return
-    const content = newMessage.trim()
+    if (!newMessage.trim() || sendingMessage) return
+
     setSendingMessage(true)
+    const tempText = newMessage.trim()
+    setNewMessage('')
+
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transactionId: id,
-          content,
+          content: tempText,
         }),
       })
+
       if (res.ok) {
-        setNewMessage('')
-        // Optimistically add message
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            content,
-            senderId: currentUser?.id,
-            senderName: currentUser?.profile?.fullName || 'You',
-            createdAt: new Date().toISOString(),
-          }
-        ])
         loadData()
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // ignore
     } finally {
       setSendingMessage(false)
     }
   }
 
-  // Submit Review
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setReviewSubmitting(true)
-    try {
-      const res = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactionId: id,
-          rating: reviewRating,
-          comment: reviewComment,
-        }),
-      })
-      if (res.ok) {
-        setReviewSubmitted(true)
-        loadData()
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setReviewSubmitting(false)
-    }
+  // Mock Online Gateway Payment
+  const handleMockPayOnline = () => {
+    setGatewayProcessing(true)
+    setTimeout(() => {
+      setGatewayProcessing(false)
+      setOnlinePaid(true)
+      setShowPaymentGatewayModal(false)
+    }, 1000)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background" style={{ paddingTop: '80px' }}>
-        <main className="flex-1 max-w-6xl mx-auto px-4 py-12 w-full space-y-4">
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 max-w-6xl mx-auto px-4 py-12 w-full space-y-4" style={{ paddingTop: '96px' }}>
           <div className="h-20 skeleton rounded-2xl" />
           <div className="h-64 skeleton rounded-3xl" />
         </main>
@@ -215,10 +264,11 @@ export default function TransactionDetailPage({
 
   if (error || !transaction) {
     return (
-      <div className="min-h-screen flex flex-col bg-background" style={{ paddingTop: '80px' }}>
-        <main className="flex-1 max-w-xl mx-auto px-4 py-20 text-center space-y-4">
-          <h2 className="font-heading font-bold text-2xl text-[#1A1A2E]">{error || 'Transaction not found'}</h2>
-          <Link href="/dashboard" className="inline-block px-4 py-2 rounded-xl bg-[#E8602C] text-white text-xs font-semibold">
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 max-w-xl mx-auto px-4 py-20 text-center space-y-4" style={{ paddingTop: '96px' }}>
+          <h2 className="font-heading font-bold text-2xl theme-title">{error || 'Transaction not found'}</h2>
+          <Link href="/dashboard" className="inline-block px-5 py-2.5 rounded-xl bg-[#E8602C] text-white text-xs font-bold">
             Back to Dashboard
           </Link>
         </main>
@@ -227,62 +277,66 @@ export default function TransactionDetailPage({
     )
   }
 
-  const isSeller = transaction.sellerId === currentUser?.id || transaction.seller?.id === currentUser?.id || transaction.partyAId === currentUser?.id
-  const isBuyer = transaction.buyerId === currentUser?.id || transaction.buyer?.id === currentUser?.id || transaction.partyBId === currentUser?.id
-  const otherParty = isSeller ? (transaction.buyer || transaction.partyB) : (transaction.seller || transaction.partyA)
   const isCompleted = transaction.status === 'COMPLETED'
-  const isOtpGenerated = transaction.status === 'OTP_GENERATED'
-  const agreedPrice = transaction.agreedPriceInr ?? transaction.price ?? transaction.agreedValue?.amount
-  const listingId = transaction.listing?.id || transaction.listingId
-  const allInspected = inspectedCondition && inspectedAccessories && inspectedWorking
+  const agreedPrice = transaction.agreedPriceInr ?? transaction.price ?? 450
+  const otherParty = isSeller ? transaction.buyer : transaction.seller
+  const allChecklistDone = itemMatches && conditionExpected && accessoriesIncluded
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8" style={{ paddingTop: '80px' }}>
-        {/* Transaction Header */}
-        <div className="rounded-3xl bg-white border border-[#E5E2DD] p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <Navbar />
+
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8" style={{ paddingTop: '96px' }}>
+        {/* Page Title & Deal Header */}
+        <div className="theme-card rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono font-bold text-[#6B7280]">
-                TRANSACTION #{transaction.id ? transaction.id.slice(-8).toUpperCase() : 'DEAL'}
+              <span className="text-xs font-mono font-bold theme-muted">
+                DEAL #{transaction.id ? transaction.id.slice(-8).toUpperCase() : 'HANDOVER'}
               </span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                isCompleted ? 'bg-[#ECFDF5] text-[#2D6A4F]' : 'bg-[#FEF3EC] text-[#E8602C]'
+                isCompleted ? 'badge-green' : 'badge-orange'
               }`}>
-                {(transaction.status || 'ACTIVE').replace('_', ' ')}
+                {transaction.status?.replace('_', ' ') || 'ACTIVE'}
               </span>
             </div>
-            <h1 className="font-heading font-extrabold text-2xl text-[#1A1A2E]">
-              {transaction.listing?.title || 'Campus Item Trade'}
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl theme-title">
+              {transaction.listing?.title || 'Campus Item Handover'}
             </h1>
-            <p className="text-xs text-[#6B7280] mt-1">
-              Trading with <strong>{otherParty?.profile?.fullName || 'Student'}</strong> · Hostel: <strong>{otherParty?.profile?.hostel || 'Campus Block'}</strong>
+            <p className="text-xs theme-muted mt-1">
+              Trading Partner: <strong className="theme-title">{otherParty?.profile?.fullName || 'Student'}</strong> · Hostel: <strong className="theme-title">{otherParty?.profile?.hostel || 'Hostel'}</strong>
             </p>
           </div>
 
-          <div className="text-right">
-            <span className="text-[11px] text-[#6B7280] block uppercase font-semibold">Agreed Trade Value</span>
-            <span className="font-heading font-extrabold text-2xl text-[#1A1A2E]">
-              {agreedPrice !== undefined && agreedPrice !== null && agreedPrice > 0 ? `₹${Number(agreedPrice).toLocaleString('en-IN')}` : 'Item / Skill Swap'}
+          <div className="text-left sm:text-right">
+            <span className="text-[11px] theme-muted block uppercase font-bold">Agreed Value</span>
+            <span className="font-heading font-extrabold text-2xl text-[#10B981] block">
+              ₹{agreedPrice}
             </span>
           </div>
         </div>
 
-        {/* Status Stepper Timeline */}
-        <div className="bg-white rounded-3xl border border-[#E5E2DD] p-6 shadow-xs">
+        {/* ─── STATUS STEPPER TIMELINE ─── */}
+        <div className="theme-card rounded-3xl p-5 shadow-xs">
           <div className="grid grid-cols-4 gap-2 text-center text-xs">
             {STATUS_STEPS.map((s, idx) => {
               const active =
-                (s.id === 'ACCEPTED' && ['ACCEPTED', 'HANDOVER_PENDING', 'OTP_GENERATED', 'VERIFIED', 'COMPLETED'].includes(transaction.status)) ||
-                (s.id === 'HANDOVER_PENDING' && ['HANDOVER_PENDING', 'OTP_GENERATED', 'VERIFIED', 'COMPLETED'].includes(transaction.status)) ||
-                (s.id === 'OTP_GENERATED' && ['OTP_GENERATED', 'VERIFIED', 'COMPLETED'].includes(transaction.status)) ||
-                (s.id === 'COMPLETED' && transaction.status === 'COMPLETED')
+                (s.id === 'ACCEPTED') ||
+                (s.id === 'HANDOVER_PENDING') ||
+                (s.id === 'OTP_VERIFICATION' && (transaction.status === 'OTP_GENERATED' || isCompleted)) ||
+                (s.id === 'COMPLETED' && isCompleted)
 
               return (
                 <div key={s.id} className="space-y-2">
-                  <div className={`h-2 rounded-full transition-colors ${active ? 'bg-[#2D6A4F]' : 'bg-[#E5E2DD]'}`} />
-                  <span className={`font-semibold block text-[11px] ${active ? 'text-[#2D6A4F]' : 'text-[#6B7280]'}`}>
-                    {idx + 1}. {s.label}
+                  <div className="flex items-center justify-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                      active ? 'bg-[#E8602C] text-white shadow-xs' : 'theme-card-alt theme-muted'
+                    }`}>
+                      {active ? '✓' : idx + 1}
+                    </div>
+                  </div>
+                  <span className={`font-semibold block text-[11px] ${active ? 'text-[#E8602C] font-bold' : 'theme-muted'}`}>
+                    {s.label}
                   </span>
                 </div>
               )
@@ -290,291 +344,446 @@ export default function TransactionDetailPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: OTP Handover & Inspection Checklist Module */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="bg-white rounded-3xl border border-[#E5E2DD] p-6 space-y-5 shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#E5E2DD] pb-3">
-                <h3 className="font-heading font-bold text-base text-[#1A1A2E] flex items-center gap-2">
-                  <span>🔑</span> Secure In-Person Handover
-                </h3>
-                <span className="text-[10px] font-bold text-[#2D6A4F] uppercase tracking-wider">
-                  Single-Use OTP
-                </span>
-              </div>
-
-              {otpError && (
-                <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#DC2626]">
-                  {otpError}
+        {/* ═════════════════════════════════════════════════════════
+            STATE 1: COMPLETED TRANSACTION BANNER
+        ═════════════════════════════════════════════════════════ */}
+        {isCompleted ? (
+          <div className="theme-card rounded-3xl p-8 text-center space-y-3 border-2 border-[#10B981] shadow-2xl">
+            <span className="text-5xl block">🎉</span>
+            <h2 className="font-heading font-extrabold text-2xl text-[#10B981]">
+              Handover Verified &amp; Completed!
+            </h2>
+            <p className="text-xs theme-muted max-w-md mx-auto leading-relaxed">
+              The single-use OTP code was successfully verified in person. The product has been transferred and trust scores for both students have increased!
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/dashboard"
+                className="inline-block px-6 py-2.5 rounded-xl bg-[#10B981] text-white font-bold text-xs shadow-xs hover:bg-[#059669] transition-colors"
+              >
+                Back to Dashboard →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          /* ═════════════════════════════════════════════════════════
+              STATE 2: ACTIVE HANDOVER SCREEN (SELLER VS BUYER VIEW)
+          ═════════════════════════════════════════════════════════ */
+          <div>
+            {/* ──── SELLER VIEW (GIVER ACCOUNT) ──── */}
+            {isSeller && (
+              <div className="theme-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl border-l-4 border-l-[#E8602C]">
+                <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-2 font-heading font-bold text-base theme-title">
+                    <span>🏪</span>
+                    <span>Seller Account (Giver)</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold badge-orange uppercase">
+                    Your Role: Giver / Seller
+                  </span>
                 </div>
-              )}
 
-              {/* State A: Completed */}
-              {isCompleted ? (
-                <div className="p-6 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] text-center space-y-2 text-[#065F46]">
-                  <span className="text-4xl">🎉</span>
-                  <h4 className="font-heading font-bold text-lg">Handover Verified & Completed!</h4>
-                  <p className="text-xs">
-                    The item was inspected in person and verified via single-use OTP. Trust scores have been increased for both parties.
+                <div className="text-center space-y-2 max-w-md mx-auto">
+                  <h3 className="font-heading font-extrabold text-2xl theme-title">
+                    Ready to hand over your item?
+                  </h3>
+                  <p className="text-xs theme-muted leading-relaxed">
+                    Meet the buyer at the hostel, let them inspect the item, then share your 6-digit handover code below.
                   </p>
                 </div>
-              ) : isSeller ? (
-                /* ─── SELLER VIEW: Generate OTP ─── */
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-[#FFF8F3] border border-[#FCD8C5] text-xs text-[#E8602C] space-y-1.5">
-                    <p className="font-semibold">Seller Handover Instructions:</p>
-                    <p className="text-[11px] text-[#9C5838]">
-                      1. Meet the buyer at the agreed hostel block.<br />
-                      2. Let them inspect the item and test all functions.<br />
-                      3. Generate the 6-digit OTP below and share it with them to confirm receipt.
-                    </p>
-                  </div>
 
-                  {generatedOtp ? (
-                    <div className="p-6 rounded-2xl bg-[#1A1A2E] text-white text-center space-y-2">
-                      <span className="text-[11px] text-[#E5E2DD]/70 uppercase tracking-widest block font-semibold">
-                        Your Handover OTP Code
+                {/* Handover Code Box for Seller */}
+                <div className="p-8 rounded-3xl theme-card-alt text-center space-y-3 border" style={{ borderColor: 'var(--border-color)' }}>
+                  <span className="text-xs font-mono theme-muted uppercase tracking-widest block font-bold">
+                    YOUR 6-DIGIT HANDOVER CODE
+                  </span>
+
+                  {sellerOtp ? (
+                    <div className="space-y-2">
+                      <span className="font-mono font-extrabold text-5xl sm:text-6xl tracking-[0.3em] text-[#E8602C] block drop-shadow-md">
+                        {sellerOtp.slice(0, 3)} {sellerOtp.slice(3)}
                       </span>
-                      <span className="font-mono font-extrabold text-4xl tracking-[0.3em] text-[#E8602C] block">
-                        {generatedOtp}
+                      <span className="text-[11px] badge-green px-3 py-1 rounded-full inline-block font-bold">
+                        ✓ Active Code · Valid for Handover
                       </span>
-                      <p className="text-[11px] text-[#E5E2DD]/60">
-                        Valid for 10 minutes. Share this only after the recipient has inspected the item.
-                      </p>
-                    </div>
-                  ) : isOtpGenerated ? (
-                    <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E5E2DD] text-center space-y-2">
-                      <p className="text-xs font-semibold text-[#1A1A2E]">An OTP is currently active for this transaction.</p>
-                      <button
-                        onClick={handleGenerateOTP}
-                        className="px-4 py-2 rounded-xl bg-[#E8602C] text-white text-xs font-bold hover:bg-[#CF4F20] cursor-pointer"
-                      >
-                        Generate New Code (Max 3)
-                      </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={handleGenerateOTP}
-                      className="w-full py-3.5 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-sm hover:bg-[#CF4F20] transition-colors shadow-xs cursor-pointer"
-                    >
-                      Generate 6-Digit Handover OTP →
-                    </button>
+                    <div className="py-4 space-y-3">
+                      <p className="text-xs theme-muted">No active code generated yet.</p>
+                      <button
+                        type="button"
+                        onClick={handleGenerateOTP}
+                        disabled={generatingOtp}
+                        className="px-6 py-3 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-sm hover:bg-[#CF4F20] transition-all shadow-md cursor-pointer"
+                      >
+                        {generatingOtp ? 'Generating Code...' : '🔑 Generate 6-Digit Handover Code'}
+                      </button>
+                    </div>
                   )}
                 </div>
-              ) : (
-                /* ─── BUYER VIEW: Inspection Checklist & Enter OTP ─── */
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E5E2DD] space-y-3">
-                    <span className="text-xs font-bold text-[#1A1A2E] uppercase tracking-wider block">
-                      Step 1: Recipient Inspection Checklist
-                    </span>
-                    <p className="text-xs text-[#6B7280]">
-                      Please inspect the item before confirming receipt:
-                    </p>
 
-                    <div className="space-y-2 text-xs">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={inspectedCondition}
-                          onChange={(e) => setInspectedCondition(e.target.checked)}
-                          className="rounded text-[#2D6A4F] focus:ring-[#2D6A4F]"
-                        />
-                        <span>Physical condition matches description and photos</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={inspectedWorking}
-                          onChange={(e) => setInspectedWorking(e.target.checked)}
-                          className="rounded text-[#2D6A4F] focus:ring-[#2D6A4F]"
-                        />
-                        <span>All buttons, screens, and functions tested and working</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={inspectedAccessories}
-                          onChange={(e) => setInspectedAccessories(e.target.checked)}
-                          className="rounded text-[#2D6A4F] focus:ring-[#2D6A4F]"
-                        />
-                        <span>All agreed accessories/cables are present</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleVerifyOTP} className="space-y-3">
-                    <span className="text-xs font-bold text-[#1A1A2E] uppercase tracking-wider block">
-                      Step 2: Enter Seller's 6-Digit OTP
-                    </span>
-
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={buyerOtpInput}
-                      onChange={(e) => setBuyerOtpInput(e.target.value)}
-                      placeholder="e.g. 123456"
-                      disabled={!allInspected}
-                      className="w-full text-center tracking-[0.5em] font-mono text-2xl py-3 rounded-xl border border-[#E5E2DD] focus:outline-none focus:border-[#2D6A4F] disabled:bg-gray-100"
-                    />
-
-                    {!allInspected && (
-                      <p className="text-[11px] text-[#DC2626]">
-                        ⚠️ Please check all 3 inspection items above to enable OTP verification.
-                      </p>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={otpVerifying || !allInspected || buyerOtpInput.trim().length !== 6}
-                      className="w-full py-3.5 rounded-xl bg-[#2D6A4F] text-white font-heading font-bold text-sm hover:bg-[#23533E] transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
-                    >
-                      {otpVerifying ? 'Verifying OTP...' : 'Confirm Receipt & Complete Trade →'}
-                    </button>
-                  </form>
+                {/* Warning message */}
+                <div className="p-4 rounded-2xl bg-[#FEF3EC] dark:bg-[#2E180E] border border-[#FCD8C5] dark:border-[#6B3215] text-xs text-[#E8602C] flex items-center gap-3">
+                  <span className="text-lg">⚠️</span>
+                  <span>
+                    <strong>Important:</strong> Show this code to the buyer <strong>only after</strong> they inspect the product and hand over the payment of <strong>₹{agreedPrice}</strong>.
+                  </span>
                 </div>
-              )}
-            </div>
 
-            {/* Post-Completion Review Module */}
-            {isCompleted && (
-              <div className="bg-white rounded-3xl border border-[#E5E2DD] p-6 space-y-4 shadow-xs">
-                <h3 className="font-heading font-bold text-base text-[#1A1A2E]">
-                  Rate Your Experience with {otherParty?.profile?.fullName || 'Student'}
-                </h3>
-
-                {reviewSubmitted ? (
-                  <div className="p-4 rounded-xl bg-[#ECFDF5] text-xs text-[#065F46] font-semibold text-center">
-                    ✓ Review submitted! Thank you for supporting campus trust.
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmitReview} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#6B7280]">Rating:</span>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setReviewRating(star)}
-                          className={`text-xl cursor-pointer ${star <= reviewRating ? 'text-amber-400' : 'text-gray-300'}`}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-
-                    <textarea
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Was the student punctual? Was the item in described condition?"
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-xl border border-[#E5E2DD] text-xs focus:outline-none focus:border-[#E8602C]"
-                    />
-
+                {/* Seller Actions & Refresh Code */}
+                {sellerOtp && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                     <button
-                      type="submit"
-                      disabled={reviewSubmitting}
-                      className="px-4 py-2 rounded-xl bg-[#1A1A2E] text-white text-xs font-bold hover:bg-[#E8602C] transition-colors disabled:opacity-50 cursor-pointer"
+                      type="button"
+                      onClick={handleGenerateOTP}
+                      disabled={generatingOtp}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl theme-card-alt border text-xs font-bold theme-title hover:border-[#E8602C] transition-colors cursor-pointer flex items-center justify-center gap-2"
+                      style={{ borderColor: 'var(--border-color)' }}
                     >
-                      {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                      <span>🔄</span>
+                      <span>{generatingOtp ? 'Regenerating...' : 'Regenerate New Code'}</span>
                     </button>
-                  </form>
+
+                    <label className="flex items-center gap-2 text-xs font-semibold theme-title cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cashReceivedConfirmed}
+                        onChange={e => setCashReceivedConfirmed(e.target.checked)}
+                        className="w-4 h-4 accent-[#10B981] rounded cursor-pointer"
+                      />
+                      <span>Confirmed: Received ₹{agreedPrice} in hand / online</span>
+                    </label>
+                  </div>
                 )}
               </div>
             )}
-          </div>
 
-          {/* Right Column: Embedded Real-time Chat Panel */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="bg-white rounded-3xl border border-[#E5E2DD] shadow-xs flex flex-col h-[560px] overflow-hidden">
-              {/* Chat Header */}
-              <div className="p-4 border-b border-[#E5E2DD] flex items-center justify-between bg-[#FAF8F5]">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#1A1A2E] text-white flex items-center justify-center font-bold text-xs">
-                    {otherParty?.profile?.fullName?.charAt(0) || 'S'}
+            {/* ──── BUYER VIEW (RECEIVER ACCOUNT) ──── */}
+            {!isSeller && (
+              <div className="theme-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl border-l-4 border-l-[#2563EB]">
+                <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-2 font-heading font-bold text-base theme-title">
+                    <span>🛍️</span>
+                    <span>Buyer Account (Receiver)</span>
                   </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-sm text-[#1A1A2E]">
-                      {otherParty?.profile?.fullName || 'Student'}
+                  <span className="px-3 py-1 rounded-full text-xs font-bold badge-blue uppercase">
+                    Your Role: Receiver / Buyer
+                  </span>
+                </div>
+
+                {/* Step 1: 3-Point Checklist */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-heading font-bold text-sm theme-title flex items-center gap-2">
+                      <span>1️⃣</span> Step 1: In-Person Physical Inspection
                     </h4>
-                    <span className="text-[11px] text-[#2D6A4F] font-semibold">
-                      Trust Score: {typeof otherParty?.trustScore === 'number' ? otherParty.trustScore : (otherParty?.trustScore?.score || 80)}/100
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      allChecklistDone ? 'badge-green' : 'badge-orange'
+                    }`}>
+                      {allChecklistDone ? '✓ Verified' : 'Check All 3'}
                     </span>
+                  </div>
+
+                  <div className="theme-card-alt rounded-2xl p-4 space-y-3 border" style={{ borderColor: 'var(--border-color)' }}>
+                    <label className="flex items-center gap-3 text-xs theme-title cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={itemMatches}
+                        onChange={e => setItemMatches(e.target.checked)}
+                        className="w-4 h-4 accent-[#2563EB] rounded cursor-pointer"
+                      />
+                      <span>Item physical condition matches photos and description</span>
+                    </label>
+
+                    <label className="flex items-center gap-3 text-xs theme-title cursor-pointer border-t pt-2" style={{ borderColor: 'var(--border-color)' }}>
+                      <input
+                        type="checkbox"
+                        checked={conditionExpected}
+                        onChange={e => setConditionExpected(e.target.checked)}
+                        className="w-4 h-4 accent-[#2563EB] rounded cursor-pointer"
+                      />
+                      <span>All buttons, screens, and functions tested and working</span>
+                    </label>
+
+                    <label className="flex items-center gap-3 text-xs theme-title cursor-pointer border-t pt-2" style={{ borderColor: 'var(--border-color)' }}>
+                      <input
+                        type="checkbox"
+                        checked={accessoriesIncluded}
+                        onChange={e => setAccessoriesIncluded(e.target.checked)}
+                        className="w-4 h-4 accent-[#2563EB] rounded cursor-pointer"
+                      />
+                      <span>All included accessories, cables, and parts are present</span>
+                    </label>
                   </div>
                 </div>
 
-                {listingId && (
-                  <Link
-                    href={`/products/${listingId}`}
-                    className="text-xs text-[#E8602C] font-semibold hover:underline"
-                  >
-                    View Item Listing
-                  </Link>
-                )}
-              </div>
+                {/* Step 2: Payment Settlement Mode */}
+                <div className="space-y-3 border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <h4 className="font-heading font-bold text-sm theme-title flex items-center gap-2">
+                    <span>2️⃣</span> Step 2: Payment Settlement (₹{agreedPrice})
+                  </h4>
 
-              {/* Chat Messages Log */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#F7F5F2]/50">
-                {messages.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-[#6B7280]">
-                    No messages yet. Send a message below to arrange a meeting spot.
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMode('UPI'); setShowPaymentGatewayModal(true); }}
+                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer ${
+                        paymentMode === 'UPI' ? 'border-[#2563EB] bg-[#EBF4FF] dark:bg-[#1E3A8A]/30 text-[#2563EB]' : 'theme-card-alt theme-muted'
+                      }`}
+                    >
+                      <span className="block text-base mb-0.5">💳</span>
+                      <span>UPI / Online</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('CASH')}
+                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer ${
+                        paymentMode === 'CASH' ? 'border-[#10B981] bg-[#ECFDF5] dark:bg-[#064E3B]/30 text-[#10B981]' : 'theme-card-alt theme-muted'
+                      }`}
+                    >
+                      <span className="block text-base mb-0.5">💵</span>
+                      <span>Cash in Hand</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('SCHEDULED')}
+                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer ${
+                        paymentMode === 'SCHEDULED' ? 'border-[#8B5CF6] bg-[#F5F3FF] dark:bg-[#2E1065]/30 text-[#8B5CF6]' : 'theme-card-alt theme-muted'
+                      }`}
+                    >
+                      <span className="block text-base mb-0.5">📅</span>
+                      <span>Schedule Pay</span>
+                    </button>
                   </div>
-                ) : (
-                  messages.map((m, idx) => {
-                    const currentUid = String(currentUser?.id || currentUser?._id || '')
-                    const senderUid = String(m.senderId || '')
-                    const isMine = senderUid === currentUid
 
-                    return (
-                      <div
-                        key={m.id || idx}
-                        className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
-                      >
-                        {!isMine && (
-                          <span className="text-[10px] font-bold text-[#6B7280] mb-0.5 px-1">
-                            {m.senderName || otherParty?.profile?.fullName || 'Student'}
-                          </span>
-                        )}
-                        <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs ${
-                            isMine
-                              ? 'bg-[#1A1A2E] text-white rounded-br-none'
-                              : 'bg-white border border-[#E5E2DD] text-[#1A1A2E] rounded-bl-none shadow-xs'
-                          }`}
+                  {paymentMode === 'UPI' && (
+                    <div className="p-3 rounded-xl bg-[#EBF4FF] dark:bg-[#1E3A8A]/20 border border-[#BFDBFE] text-xs text-[#2563EB] flex items-center justify-between">
+                      <span>{onlinePaid ? '✓ UPI Payment Verified: ₹' + agreedPrice : 'Pay ₹' + agreedPrice + ' via Campus UPI Gateway'}</span>
+                      {!onlinePaid && (
+                        <button
+                          onClick={() => setShowPaymentGatewayModal(true)}
+                          className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white font-bold text-xs cursor-pointer"
                         >
-                          <p>{m.content}</p>
-                        </div>
-                        <span className="text-[10px] text-[#9CA3AF] mt-0.5 px-1">
-                          {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
-                      </div>
-                    )
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                          Open Gateway →
+                        </button>
+                      )}
+                    </div>
+                  )}
 
-              {/* Message Input Box */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-[#E5E2DD] bg-white flex gap-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message to coordinate meetup..."
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E2DD] text-xs focus:outline-none focus:border-[#E8602C]"
-                />
-                <button
-                  type="submit"
-                  disabled={sendingMessage || !newMessage.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-[#E8602C] text-white text-xs font-bold hover:bg-[#CF4F20] transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  Send
-                </button>
-              </form>
+                  {paymentMode === 'SCHEDULED' && (
+                    <div className="p-3 rounded-xl bg-[#F5F3FF] dark:bg-[#2E1065]/20 border border-[#DDD6FE] text-xs text-[#8B5CF6] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span>Repayment Date:</span>
+                        <input
+                          type="date"
+                          value={scheduledDate}
+                          onChange={e => setScheduledDate(e.target.value)}
+                          className="theme-input px-2 py-1 rounded text-xs"
+                        />
+                      </div>
+                      <p className="text-[10px] opacity-80">Promissory pay later agreement logged for ₹{agreedPrice}.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 3: Enter Seller's 6-Digit Code */}
+                <form onSubmit={handleVerifyOTP} className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <div>
+                    <h4 className="font-heading font-bold text-sm theme-title flex items-center gap-2 mb-1">
+                      <span>3️⃣</span> Step 3: Enter Seller's 6-Digit Code
+                    </h4>
+                    <p className="text-xs theme-muted mb-3">
+                      Ask the seller for the 6-digit code shown on their screen.
+                    </p>
+
+                    {/* 6 Input Boxes */}
+                    <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handlePasteOtp}>
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <React.Fragment key={i}>
+                          {i === 3 && <span className="font-bold theme-muted text-xl">-</span>}
+                          <input
+                            ref={el => { otpInputRefs.current[i] = el }}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={otpDigits[i]}
+                            onChange={e => handleDigitChange(i, e.target.value)}
+                            onKeyDown={e => handleDigitKeyDown(i, e)}
+                            disabled={!allChecklistDone}
+                            placeholder="•"
+                            className="w-10 h-12 sm:w-12 sm:h-14 text-center font-mono font-extrabold text-2xl rounded-xl theme-input focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/30 disabled:opacity-40"
+                          />
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+
+                  {!allChecklistDone && (
+                    <p className="text-xs text-[#DC2626] font-semibold text-center">
+                      ⚠️ Please check all 3 inspection checklist items in Step 1 to enable verification.
+                    </p>
+                  )}
+
+                  {otpError && (
+                    <div className="p-3 rounded-xl bg-[#2A1414] border border-[#5A2020] text-xs text-[#EF4444] font-semibold text-center">
+                      ⚠️ {otpError}
+                    </div>
+                  )}
+
+                  {otpSuccessMsg && (
+                    <div className="p-3 rounded-xl bg-[#064E3B] text-xs text-[#6EE7B7] font-bold text-center">
+                      {otpSuccessMsg}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={otpVerifying || !allChecklistDone || otpDigits.join('').length !== 6}
+                    className="w-full py-4 rounded-2xl bg-[#2563EB] text-white font-heading font-extrabold text-sm hover:bg-[#1D4ED8] transition-all disabled:opacity-40 shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>🛡️</span>
+                    <span>{otpVerifying ? 'Verifying Code...' : 'Verify Code & Complete Handover'}</span>
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── AI ASSISTANT CHATBOT & REAL-TIME 2-WAY CHAT ROOM ─── */}
+        <div className="space-y-6 max-w-4xl mx-auto">
+          {/* Embedded AI Assistant Chatbot */}
+          <AITradeChatbot
+            itemTitle={transaction.listing?.title || 'Campus Item'}
+            agreedPrice={agreedPrice}
+            role={isSeller ? 'SELLER' : 'BUYER'}
+            onInsertPrompt={(txt) => setNewMessage(txt)}
+          />
+
+          {/* Real-Time Handover Chat */}
+          <div className="theme-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+            <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">💬</span>
+                <div>
+                  <h3 className="font-heading font-bold text-base theme-title">
+                    Real-Time Handover Chat &amp; Coordination
+                  </h3>
+                  <p className="text-[11px] theme-muted">
+                    Live chat between <strong className="theme-title">{transaction.seller?.profile?.fullName || 'Seller'}</strong> and <strong className="theme-title">{transaction.buyer?.profile?.fullName || 'Buyer'}</strong>
+                  </p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold badge-green flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                <span>Real-Time Sync</span>
+              </span>
+            </div>
+
+          {/* Chat Messages Thread */}
+          <div ref={chatScrollRef} className="h-72 overflow-y-auto p-4 rounded-2xl theme-card-alt space-y-3 border" style={{ borderColor: 'var(--border-color)' }}>
+            {messages.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-center text-xs theme-muted">
+                No messages yet. Send a greeting to coordinate your handover spot!
+              </div>
+            ) : (
+              messages.map((m, idx) => {
+                const isMe = m.senderId === currentUser?.id || (isSeller && m.senderId === transaction.sellerId) || (!isSeller && m.senderId === transaction.buyerId)
+                return (
+                  <div
+                    key={m.id || idx}
+                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                  >
+                    <span className="text-[10px] theme-muted mb-0.5 px-1">
+                      {isMe ? 'You' : (m.senderName || 'Trading Partner')}
+                    </span>
+                    <div
+                      className={`max-w-md px-4 py-2.5 rounded-2xl text-xs ${
+                        isMe
+                          ? 'bg-[#E8602C] text-white rounded-br-none shadow-md font-medium'
+                          : 'theme-card theme-title rounded-bl-none border shadow-md font-medium'
+                      }`}
+                      style={!isMe ? { borderColor: 'var(--border-color)' } : {}}
+                    >
+                      {m.content}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Message Input Form */}
+          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              placeholder="Type message to coordinate handover location & time..."
+              className="flex-1 px-4 py-3 rounded-xl theme-input text-xs focus:outline-none focus:border-[#E8602C]"
+            />
+            <button
+              type="submit"
+              disabled={sendingMessage || !newMessage.trim()}
+              className="px-6 py-3 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-xs hover:bg-[#CF4F20] transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Send →
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+      {/* ─── ONLINE PAYMENT GATEWAY SAMPLE MODAL ─── */}
+      {showPaymentGatewayModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="theme-card rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💳</span>
+                <h3 className="font-heading font-bold text-base theme-title">Campus UPI Gateway</h3>
+              </div>
+              <button
+                onClick={() => setShowPaymentGatewayModal(false)}
+                className="theme-muted hover:text-red-500 text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl theme-card-alt text-center space-y-3 border" style={{ borderColor: 'var(--border-color)' }}>
+              <span className="text-[11px] theme-muted uppercase font-bold block">Pay to Hostel Market Escrow</span>
+              <span className="font-heading font-extrabold text-3xl text-[#10B981] block">
+                ₹{agreedPrice}
+              </span>
+              <div className="w-32 h-32 rounded-2xl bg-white p-2 mx-auto border flex items-center justify-center shadow-md">
+                <div className="text-center font-mono text-[9px] text-gray-800">
+                  <span className="text-4xl block mb-1">📱</span>
+                  UPI QR Code
+                </div>
+              </div>
+              <span className="text-[10px] theme-muted font-mono block">UPI ID: hostelmarket@campus.upi</span>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleMockPayOnline}
+                disabled={gatewayProcessing}
+                className="w-full py-3.5 rounded-xl bg-[#10B981] text-white font-heading font-bold text-xs hover:bg-[#059669] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>✓</span>
+                <span>{gatewayProcessing ? 'Processing Transaction...' : 'Complete Payment (₹' + agreedPrice + ')'}</span>
+              </button>
+              <p className="text-[10px] text-center theme-muted">
+                Simulated Sandbox Gateway · Instant digital payment confirmation
+              </p>
             </div>
           </div>
         </div>
-      </main>
+      )}
 
       <Footer />
     </div>

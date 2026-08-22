@@ -1,63 +1,104 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* ─── Tailwind v4 Design Tokens ─────────────────────────── */
-@theme {
-  --color-background:  #F7F5F2;
-  --color-surface:     #FFFFFF;
-  --color-navy:        #1A1A2E;
-  --color-accent:      #E8602C;
-  --color-accent-dark: #CF4F20;
-  --color-donate:      #2D6A4F;
-  --color-muted:       #6B7280;
-  --color-border:      #E5E2DD;
-  --color-danger:      #DC2626;
-
-  --font-heading: 'Syne', sans-serif;
-  --font-body:    'Inter', sans-serif;
-
-  --radius-xl:  1rem;
-  --radius-2xl: 1.25rem;
-  --radius-3xl: 1.5rem;
+/* ─── Pure High-Contrast 100% Dark Theme System ─────────────────────────── */
+:root, [data-theme="dark"], .dark {
+  --bg-page: #0B0E17;
+  --bg-card: #131728;
+  --bg-card-alt: #1A1F36;
+  --bg-card-subtle: #202742;
+  --bg-input: #1A1F36;
+  --text-title: #FFFFFF;
+  --text-body: #E2E8F0;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --border-color: #272E49;
+  --border-subtle: #1E2338;
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
 }
 
 /* ─── Base Reset ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  background-color: #0B0E17 !important;
+  color: #E2E8F0 !important;
+  color-scheme: dark !important;
+}
 
 body {
-  background-color: #F7F5F2;
-  color: #1A1A2E;
+  background-color: #0B0E17 !important;
+  color: #E2E8F0 !important;
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
+.bg-background {
+  background-color: #0B0E17 !important;
+}
+
+/* ─── Universal Dark Mode Enforcements (No White Backgrounds/Invisible Text) ─ */
+.bg-white {
+  background-color: #131728 !important;
+}
+
+.text-\[\#1A1A2E\], .text-\[\#111128\], .text-\[\#111827\], .text-gray-900, .text-slate-900 {
+  color: #FFFFFF !important;
+}
+
+.text-\[\#6B7280\], .text-\[\#4B5563\], .text-\[\#374151\], .text-gray-600, .text-gray-700 {
+  color: #94A3B8 !important;
+}
+
+.border-\[\#E5E2DD\], .border-\[\#E5E7EB\], .border-\[\#E8E3DC\], .border-gray-200 {
+  border-color: #272E49 !important;
+}
+
+.bg-\[\#FAF8F5\], .bg-\[\#F4F1ED\], .bg-\[\#F7F5F2\], .bg-gray-50, .bg-gray-100 {
+  background-color: #1A1F36 !important;
+}
+
+input, select, textarea {
+  background-color: #1A1F36 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #272E49 !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* ─── Typography ─────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
-  line-height: 1.2;
-  color: #1A1A2E;
+  line-height: 1.25;
+  color: #FFFFFF !important;
 }
 
-/* ─── Focus ──────────────────────────────────────────────── */
+/* ─── Focus States ───────────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid #E8602C;
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 6px;
 }
 
 /* ─── Custom Scrollbar ───────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F7F5F2; }
-::-webkit-scrollbar-thumb { background: #D1C9C0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+::-webkit-scrollbar-track { background: #0B0E17; }
+::-webkit-scrollbar-thumb { background: #272E49; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #E8602C; }
 
 /* ─── Skeleton Shimmer ───────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, #E5E2DD 25%, #EEE9E4 50%, #E5E2DD 75%);
+  background: linear-gradient(90deg, #131728 25%, #1A1F36 50%, #131728 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
@@ -67,227 +108,76 @@ h1, h2, h3, h4, h5, h6 {
   100% { background-position:  200% 0; }
 }
 
-/* ─── Glassmorphism Card ─────────────────────────────────── */
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 1.25rem;
-}
-
-.glass-light {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 1.25rem;
-}
-
-/* ─── Mode Badges ────────────────────────────────────────── */
-.badge-sell     { background:#FEF3EC; color:#E8602C; border:1px solid #FCDEC9; }
-.badge-lend     { background:#EBF4FF; color:#2563EB; border:1px solid #BFDBFE; }
-.badge-borrow   { background:#F0F9FF; color:#0369A1; border:1px solid #BAE6FD; }
-.badge-exchange { background:#F5F3FF; color:#7C3AED; border:1px solid #DDD6FE; }
-.badge-donate   { background:#ECFDF5; color:#2D6A4F; border:1px solid #A7F3D0; }
-.badge-knowledge{ background:#FFF7ED; color:#C2410C; border:1px solid #FED7AA; }
-
-/* ─── Condition Pills ────────────────────────────────────── */
-.condition-excellent { background:#ECFDF5; color:#065F46; }
-.condition-good      { background:#F0FDF4; color:#166534; }
-.condition-fair      { background:#FFFBEB; color:#92400E; }
-.condition-poor      { background:#FFF7ED; color:#9A3412; }
-.condition-needs-review { background:#FEF2F2; color:#991B1B; }
-
-/* ─── Button Variants ────────────────────────────────────── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #E8602C;
-  color: white;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.875rem;
-  border-radius: 0.75rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  box-shadow: 0 4px 14px rgba(232,96,44,0.35);
-}
-.btn-primary:hover {
-  background: #CF4F20;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(232,96,44,0.45);
-}
-.btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: transparent;
-  color: #1A1A2E;
-  font-weight: 600;
-  font-size: 0.875rem;
-  border-radius: 0.75rem;
-  border: 1.5px solid #E5E2DD;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-.btn-ghost:hover {
-  border-color: #E8602C;
-  color: #E8602C;
-  background: #FEF3EC;
-}
-
-.btn-outline-white {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: transparent;
-  color: white;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.875rem;
-  border-radius: 0.75rem;
-  border: 1.5px solid rgba(255,255,255,0.4);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-.btn-outline-white:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.7);
-}
-
-/* ─── Card Hover Effect ──────────────────────────────────── */
-.card-hover {
-  transition: all 0.25s ease;
-}
-.card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(26,26,46,0.12);
-}
-
-/* ─── Input Styles ───────────────────────────────────────── */
-.input-field {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1.5px solid #E5E2DD;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  color: #1A1A2E;
-  background: white;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  outline: none;
-}
-.input-field::placeholder { color: #9CA3AF; }
-.input-field:focus {
-  border-color: #E8602C;
-  box-shadow: 0 0 0 3px rgba(232,96,44,0.12);
-}
-
-/* ─── Section Labels ─────────────────────────────────────── */
-.section-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #E8602C;
-}
-
-/* ─── Trust Score Ring ───────────────────────────────────── */
-.trust-ring {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: conic-gradient(#2D6A4F calc(var(--pct, 70) * 1%), #E5E2DD 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.trust-ring-inner {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 0.7rem;
-  color: #1A1A2E;
-}
-
-/* ─── AI Badge ───────────────────────────────────────────── */
-.ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #FFF7ED, #FEF3EC);
-  color: #C2410C;
-  border: 1px solid #FED7AA;
-}
-
-/* ─── Hero Gradient ──────────────────────────────────────── */
-.hero-gradient {
-  background: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 50%, #1e1528 100%);
-}
-
-/* ─── Dot Grid Pattern ───────────────────────────────────── */
-.dot-grid {
-  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-/* ─── Fade In Animation ──────────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+/* ─── Keyframe Animations ────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fadeUp 0.5s ease forwards; }
-.fade-up-1 { animation: fadeUp 0.5s 0.1s ease both; }
-.fade-up-2 { animation: fadeUp 0.5s 0.2s ease both; }
-.fade-up-3 { animation: fadeUp 0.5s 0.3s ease both; }
-.fade-up-4 { animation: fadeUp 0.5s 0.4s ease both; }
 
-/* ─── Pulse Dot ──────────────────────────────────────────── */
-@keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.4); opacity: 0.6; }
-}
-.pulse-dot {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #22C55E;
-  animation: pulse-dot 1.8s ease-in-out infinite;
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Floating Card Animation ────────────────────────────── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
+/* ─── App Global Helper Classes ─────────────────────────── */
+.theme-card {
+  background-color: #131728 !important;
+  border: 1px solid #272E49 !important;
+  color: #E2E8F0 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
 }
-.float-card { animation: float 4s ease-in-out infinite; }
 
-/* ─── Gradient Text ──────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, #E8602C, #F97316);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.theme-card-alt {
+  background-color: #1A1F36 !important;
+  border: 1px solid #272E49 !important;
+  color: #E2E8F0 !important;
+}
+
+.theme-title {
+  color: #FFFFFF !important;
+}
+
+.theme-muted {
+  color: #94A3B8 !important;
+}
+
+.theme-input {
+  background-color: #1A1F36 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #272E49 !important;
+}
+
+/* ─── Ultra-High-Contrast Dark Badges ──────────────────────── */
+.badge-green {
+  background-color: #064E3B !important;
+  color: #6EE7B7 !important;
+  border: 1px solid #047857 !important;
+  font-weight: 700 !important;
+}
+
+.badge-orange {
+  background-color: #431407 !important;
+  color: #FDBA74 !important;
+  border: 1px solid #9A3412 !important;
+  font-weight: 700 !important;
+}
+
+.badge-blue {
+  background-color: #1E3A8A !important;
+  color: #93C5FD !important;
+  border: 1px solid #1D4ED8 !important;
+  font-weight: 700 !important;
+}
+
+.badge-purple {
+  background-color: #3B0764 !important;
+  color: #D8B4FE !important;
+  border: 1px solid #7E22CE !important;
+  font-weight: 700 !important;
+}
+
+.badge-neutral {
+  background-color: #1A1F36 !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #272E49 !important;
+  font-weight: 700 !important;
 }

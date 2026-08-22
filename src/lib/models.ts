@@ -167,6 +167,7 @@ export interface ITransaction extends Document {
   agreedPriceInr?: number
   status: 'OFFER_ACCEPTED' | 'HANDOVER_PENDING' | 'OTP_GENERATED' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED'
   otpCodeHash?: string
+  plainOtpCode?: string
   otpExpiry?: Date
   otpUsed: boolean
   otpGenerationCount: number
@@ -187,6 +188,7 @@ const TransactionSchema = new Schema<ITransaction>({
     default: 'OFFER_ACCEPTED',
   },
   otpCodeHash: String,
+  plainOtpCode: String,
   otpExpiry: Date,
   otpUsed: { type: Boolean, default: false },
   otpGenerationCount: { type: Number, default: 0 },

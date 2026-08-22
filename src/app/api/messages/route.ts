@@ -77,9 +77,9 @@ export async function GET(req: NextRequest) {
       }
     }))
 
-    // 2. Fetch all offers (received on user's listings + sent by user)
+    // 2. Fetch pending proposals only (received on user's active listings + sent by user)
     const { Listing, Offer } = await import('@/lib/models')
-    const myListings = await Listing.find({ sellerId: user.userId }).select('_id').lean()
+    const myListings = await Listing.find({ sellerId: user.userId }).select('_id status').lean()
     const myListingIds = myListings.map((l: any) => l._id)
 
     const offers = await Offer.find({
@@ -87,8 +87,9 @@ export async function GET(req: NextRequest) {
         { listingId: { $in: myListingIds } },
         { buyerId: user.userId },
       ],
+      status: 'PENDING',
     })
-      .populate('listingId', 'title mode priceInr images sellerId')
+      .populate('listingId', 'title mode priceInr images sellerId status')
       .populate('buyerId', 'profile email trustScore')
       .sort({ createdAt: -1 })
       .lean()
@@ -96,44 +97,55 @@ export async function GET(req: NextRequest) {
     const receivedOffers: any[] = []
     const sentOffers: any[] = []
 
-    const offerThreads = offers.map((o: any) => {
-      const isSeller = myListingIds.some((id: any) => id.toString() === o.listingId?._id?.toString() || id.toString() === o.listingId?.toString())
-      const formatted = {
-        id: o._id.toString(),
-        type: 'OFFER',
-        offerId: o._id.toString(),
-        status: o.status,
-        isSeller,
-        offerPriceInr: o.offerPriceInr,
-        note: o.note,
-        listing: o.listingId ? {
-          id: o.listingId._id?.toString(),
-          title: o.listingId.title,
-          mode: o.listingId.mode,
-          priceInr: o.listingId.priceInr,
-          images: o.listingId.images,
-          sellerId: o.listingId.sellerId?.toString(),
-        } : null,
-        buyer: o.buyerId ? {
-          id: o.buyerId._id?.toString(),
-          fullName: o.buyerId.profile?.fullName || 'Student',
-          hostel: o.buyerId.profile?.hostel || '',
-          block: o.buyerId.profile?.block || '',
-          trustScore: typeof o.buyerId.trustScore === 'number' ? o.buyerId.trustScore : 80,
-        } : null,
-        lastMessage: o.note ? `Offer note: "${o.note}"` : (o.offerPriceInr ? `Offered ₹${o.offerPriceInr}` : 'Proposed an offer/swap'),
-        updatedAt: o.updatedAt || o.createdAt,
-        createdAt: o.createdAt,
-      }
+    // Also get set of listing IDs already in active transactions to prevent duplicate pending offers
+    const activeTxListingIds = new Set(txs.map((t: any) => t.listingId?._id?.toString() || t.listingId?.toString()))
 
-      if (isSeller) {
-        receivedOffers.push(formatted)
-      } else {
-        sentOffers.push(formatted)
-      }
+    const offerThreads = offers
+      .filter((o: any) => {
+        // Exclude offers for listings that are already in transaction or completed
+        const listStatus = o.listingId?.status
+        if (listStatus === 'IN_TRANSACTION' || listStatus === 'COMPLETED') return false
+        if (activeTxListingIds.has(o.listingId?._id?.toString())) return false
+        return true
+      })
+      .map((o: any) => {
+        const isSeller = myListingIds.some((id: any) => id.toString() === o.listingId?._id?.toString() || id.toString() === o.listingId?.toString())
+        const formatted = {
+          id: o._id.toString(),
+          type: 'OFFER',
+          offerId: o._id.toString(),
+          status: o.status,
+          isSeller,
+          offerPriceInr: o.offerPriceInr,
+          note: o.note,
+          listing: o.listingId ? {
+            id: o.listingId._id?.toString(),
+            title: o.listingId.title,
+            mode: o.listingId.mode,
+            priceInr: o.listingId.priceInr,
+            images: o.listingId.images,
+            sellerId: o.listingId.sellerId?.toString(),
+          } : null,
+          buyer: o.buyerId ? {
+            id: o.buyerId._id?.toString(),
+            fullName: o.buyerId.profile?.fullName || 'Student',
+            hostel: o.buyerId.profile?.hostel || '',
+            block: o.buyerId.profile?.block || '',
+            trustScore: typeof o.buyerId.trustScore === 'number' ? o.buyerId.trustScore : 80,
+          } : null,
+          lastMessage: o.note ? `Offer note: "${o.note}"` : (o.offerPriceInr ? `Offered ₹${o.offerPriceInr}` : 'Proposed an offer/swap'),
+          updatedAt: o.updatedAt || o.createdAt,
+          createdAt: o.createdAt,
+        }
 
-      return formatted
-    })
+        if (isSeller && o.status === 'PENDING') {
+          receivedOffers.push(formatted)
+        } else if (!isSeller && o.status === 'PENDING') {
+          sentOffers.push(formatted)
+        }
+
+        return formatted
+      })
 
     // Combine threads
     const allThreads = [...txThreads, ...offerThreads].sort((a: any, b: any) => {

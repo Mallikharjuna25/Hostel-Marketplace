@@ -59,6 +59,33 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       offer.status = 'ACCEPTED'
       await offer.save()
 
+      // Auto-decline all other pending offers for this listing
+      const otherOffers = await Offer.find({
+        listingId: listing._id,
+        _id: { $ne: offer._id },
+        status: 'PENDING',
+      })
+
+      if (otherOffers.length > 0) {
+        await Offer.updateMany(
+          { listingId: listing._id, _id: { $ne: offer._id }, status: 'PENDING' },
+          { $set: { status: 'REJECTED' } }
+        )
+
+        // Notify other buyers
+        for (const other of otherOffers) {
+          try {
+            await new Notification({
+              userId: other.buyerId,
+              type: 'OFFER_REJECTED',
+              title: 'Offer Closed',
+              message: `The seller accepted another student's offer for "${listing.title}".`,
+              link: '/dashboard',
+            }).save()
+          } catch {}
+        }
+      }
+
       // Create or find transaction
       const agreedPrice = offer.offerPriceInr || listing.priceInr || 0
       const tx = new Transaction({

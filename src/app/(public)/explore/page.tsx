@@ -107,33 +107,33 @@ function ExploreContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-8">
       {/* Header & Search Bar */}
-      <div className="space-y-4 mb-8">
+      <div className="space-y-4">
         <div>
-          <h1 className="font-heading font-extrabold text-3xl text-[#1A1A2E]">
+          <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-[#1A1A2E] dark:text-white tracking-tight">
             Explore Campus Marketplace
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
+          <p className="text-xs sm:text-sm text-[#6B7280] dark:text-[#9CA3AF] mt-1">
             Search items, filter by hostel block or exchange mode, and compare deals.
           </p>
         </div>
 
         {/* Search & AI Interpretation Input */}
         <div className="relative">
-          <div className="flex items-center gap-2 bg-white rounded-2xl border border-[#E5E2DD] p-2 shadow-xs focus-within:border-[#E8602C]">
+          <div className="flex items-center gap-2 bg-white dark:bg-[#131728] rounded-2xl border border-[#E5E2DD] dark:border-[#272E49] p-2 shadow-xs focus-within:border-[#E8602C] dark:focus-within:border-[#E8602C]">
             <span className="text-xl pl-3">🔍</span>
             <input
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Try searching: 'Scientific calculator under 500' or 'Engineering books in Block B'..."
-              className="flex-1 bg-transparent text-sm text-[#1A1A2E] placeholder-[#9CA3AF] focus:outline-none px-2"
+              className="flex-1 bg-transparent text-sm text-[#1A1A2E] dark:text-white placeholder-[#9CA3AF] focus:outline-none px-2"
             />
             {q && (
               <button
                 onClick={() => setQ('')}
-                className="text-xs text-[#6B7280] hover:text-[#1A1A2E] px-2 py-1"
+                className="text-xs text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A2E] dark:hover:text-white px-2 py-1 cursor-pointer"
               >
                 Clear
               </button>
@@ -142,10 +142,10 @@ function ExploreContent() {
 
           {/* AI Search Understood Banner */}
           {aiSearchInterpretation && (
-            <div className="mt-2 p-2.5 rounded-xl bg-[#FFF8F3] border border-[#FCD8C5] flex items-center justify-between text-xs text-[#E8602C]">
+            <div className="mt-2 p-2.5 rounded-xl bg-[#FFF8F3] dark:bg-[#1F1512] border border-[#FCD8C5] dark:border-[#6B3215] flex items-center justify-between text-xs text-[#E8602C]">
               <div className="flex items-center gap-2">
                 <span>⚡</span>
-                <span><strong>AI understood:</strong> {aiSearchInterpretation}</span>
+                <span className="dark:text-[#F3F4F6]"><strong>AI understood:</strong> {aiSearchInterpretation}</span>
               </div>
               <AIBadge label="Smart Search" sublabel="Keyword Match" />
             </div>
@@ -158,10 +158,10 @@ function ExploreContent() {
             <button
               key={t.value}
               onClick={() => setType(t.value)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 type === t.value
-                  ? 'bg-[#1A1A2E] text-white shadow-xs'
-                  : 'bg-white text-[#1A1A2E]/80 border border-[#E5E2DD] hover:bg-[#F7F5F2]'
+                  ? 'bg-[#E8602C] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#131728] text-[#1A1A2E] dark:text-[#D1D5DB] border border-[#E5E2DD] dark:border-[#272E49] hover:border-[#E8602C]'
               }`}
             >
               {t.label}
@@ -174,9 +174,9 @@ function ExploreContent() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Filter Sidebar */}
         <aside className="lg:col-span-3 space-y-6">
-          <div className="bg-white rounded-2xl border border-[#E5E2DD] p-5 space-y-5">
-            <div className="flex items-center justify-between border-b border-[#E5E2DD] pb-3">
-              <h3 className="font-heading font-bold text-sm text-[#1A1A2E]">Filters</h3>
+          <div className="theme-card rounded-2xl p-5 space-y-5">
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-color)' }}>
+              <h3 className="font-heading font-bold text-sm theme-title">Filters</h3>
               <button
                 onClick={() => {
                   setCategory('ALL')
@@ -186,7 +186,7 @@ function ExploreContent() {
                   setHostel('')
                   setVerifiedOnly(false)
                 }}
-                className="text-[11px] text-[#E8602C] font-semibold hover:underline"
+                className="text-[11px] text-[#E8602C] font-bold hover:underline cursor-pointer"
               >
                 Reset All
               </button>
@@ -194,29 +194,33 @@ function ExploreContent() {
 
             {/* Category */}
             <div>
-              <label className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-bold theme-title uppercase tracking-wider block mb-2">
                 Category
               </label>
-              <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategory(cat)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors flex items-center justify-between ${
-                      category === cat
-                        ? 'bg-[#FEF3EC] text-[#E8602C] font-semibold'
-                        : 'text-[#1A1A2E]/80 hover:bg-[#F7F5F2]'
-                    }`}
-                  >
-                    <span>{cat === 'ALL' ? 'All Categories' : cat}</span>
-                  </button>
-                ))}
+              <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                {CATEGORIES.map((cat) => {
+                  const isSelected = category === cat
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setCategory(cat)}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer font-medium ${
+                        isSelected
+                          ? 'bg-[#E8602C] text-white font-extrabold shadow-sm'
+                          : 'text-[#1F2937] dark:text-[#F3F4F6] hover:bg-[#FAF8F5] dark:hover:bg-[#1A1F36] hover:text-[#E8602C]'
+                      }`}
+                    >
+                      <span>{cat === 'ALL' ? 'All Categories' : cat}</span>
+                      {isSelected && <span>✓</span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             {/* Max Price */}
             <div>
-              <label className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-bold theme-title uppercase tracking-wider block mb-2">
                 Max Price (₹ INR)
               </label>
               <input
@@ -224,19 +228,19 @@ function ExploreContent() {
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 placeholder="e.g. 1000"
-                className="w-full px-3 py-1.5 rounded-lg border border-[#E5E2DD] text-xs focus:outline-none focus:border-[#E8602C]"
+                className="w-full px-3 py-2 rounded-xl theme-input text-xs focus:outline-none focus:border-[#E8602C]"
               />
             </div>
 
             {/* Condition */}
             <div>
-              <label className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-bold theme-title uppercase tracking-wider block mb-2">
                 Condition
               </label>
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg border border-[#E5E2DD] text-xs bg-white focus:outline-none focus:border-[#E8602C]"
+                className="w-full px-3 py-2 rounded-xl theme-input text-xs focus:outline-none focus:border-[#E8602C] cursor-pointer"
               >
                 <option value="">Any Condition</option>
                 <option value="EXCELLENT">Excellent</option>
@@ -248,7 +252,7 @@ function ExploreContent() {
 
             {/* Hostel Block */}
             <div>
-              <label className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-bold theme-title uppercase tracking-wider block mb-2">
                 Hostel / Block
               </label>
               <input
@@ -256,18 +260,18 @@ function ExploreContent() {
                 value={hostel}
                 onChange={(e) => setHostel(e.target.value)}
                 placeholder="e.g. Block B or Hostel 10"
-                className="w-full px-3 py-1.5 rounded-lg border border-[#E5E2DD] text-xs focus:outline-none focus:border-[#E8602C]"
+                className="w-full px-3 py-2 rounded-xl theme-input text-xs focus:outline-none focus:border-[#E8602C]"
               />
             </div>
 
             {/* Verified Students Only */}
-            <div className="pt-2 border-t border-[#E5E2DD]">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[#1A1A2E]">
+            <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold theme-title">
                 <input
                   type="checkbox"
                   checked={verifiedOnly}
                   onChange={(e) => setVerifiedOnly(e.target.checked)}
-                  className="rounded text-[#E8602C] focus:ring-[#E8602C]"
+                  className="rounded accent-[#E8602C] cursor-pointer"
                 />
                 <span>Verified Students Only</span>
               </label>
@@ -278,16 +282,16 @@ function ExploreContent() {
         {/* Right Product Grid */}
         <section className="lg:col-span-9 space-y-6">
           {/* Sorting and Results count header */}
-          <div className="flex items-center justify-between text-xs text-[#6B7280]">
+          <div className="flex items-center justify-between text-xs theme-muted">
             <span>
-              Showing <strong>{listings.length}</strong> items
+              Showing <strong className="theme-title">{listings.length}</strong> items
             </span>
             <div className="flex items-center gap-2">
               <span>Sort by:</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="bg-white border border-[#E5E2DD] rounded-lg px-2.5 py-1 text-xs text-[#1A1A2E] focus:outline-none focus:border-[#E8602C]"
+                className="theme-input rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#E8602C] cursor-pointer"
               >
                 <option value="recent">Recently Added</option>
                 <option value="price_asc">Price: Low to High</option>
@@ -301,7 +305,7 @@ function ExploreContent() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="bg-white rounded-2xl border border-[#E5E2DD] p-4 space-y-3">
+                <div key={i} className="bg-white dark:bg-[#131728] rounded-2xl border border-[#E5E2DD] dark:border-[#272E49] p-4 space-y-3">
                   <div className="w-full h-44 rounded-xl skeleton" />
                   <div className="w-3/4 h-4 rounded skeleton" />
                   <div className="w-1/2 h-4 rounded skeleton" />
@@ -311,37 +315,18 @@ function ExploreContent() {
             </div>
           ) : listings.length === 0 ? (
             /* Empty State */
-            <div className="rounded-2xl border border-dashed border-[#E5E2DD] bg-white p-12 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#FAF8F5] text-3xl mx-auto flex items-center justify-center">
+            <div className="rounded-2xl border border-dashed border-[#E5E2DD] dark:border-[#272E49] bg-white dark:bg-[#131728] p-12 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#FAF8F5] dark:bg-[#1A1F36] text-3xl mx-auto flex items-center justify-center">
                 📦
               </div>
-              <h3 className="font-heading font-bold text-lg text-[#1A1A2E]">
+              <h3 className="font-heading font-bold text-lg text-[#1A1A2E] dark:text-white">
                 No listings found matching your criteria
               </h3>
-              <p className="text-xs text-[#6B7280] max-w-md mx-auto">
-                Try widening your price range, searching across all categories, or be the first to list what someone else needs!
+              <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF] max-w-sm mx-auto">
+                Try broadening your search query or selecting "All Categories".
               </p>
-              <div className="pt-2 flex justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setCategory('ALL')
-                    setType('')
-                    setQ('')
-                  }}
-                  className="px-4 py-2 rounded-xl bg-white border border-[#E5E2DD] text-xs font-semibold text-[#1A1A2E] hover:bg-[#F7F5F2]"
-                >
-                  Clear Filters
-                </button>
-                <Link
-                  href="/listings/new"
-                  className="px-4 py-2 rounded-xl bg-[#E8602C] text-white text-xs font-semibold hover:bg-[#CF4F20]"
-                >
-                  + List This Item
-                </Link>
-              </div>
             </div>
           ) : (
-            /* Product Grid */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {listings.map((item) => (
                 <div key={item.id} className="relative group">
@@ -349,27 +334,25 @@ function ExploreContent() {
                     id={item.id}
                     title={item.title}
                     category={item.category}
-                    price={item.price}
-                    transactionType={item.transactionType}
+                    priceInr={item.priceInr}
+                    mode={item.mode}
                     condition={item.condition}
-                    location={item.location}
-                    distanceMeters={item.distanceMeters}
+                    hostel={item.hostel}
+                    block={item.block}
                     images={item.images}
-                    owner={item.owner}
-                    aiAnalysis={item.aiAnalysis}
-                    pricePrediction={item.pricePrediction}
+                    seller={item.seller}
+                    aiVerified={item.aiVerified}
                   />
-
-                  {/* Add to Compare Tray Button */}
+                  {/* Compare Checkbox Button */}
                   <button
                     onClick={(e) => toggleCompare(item, e)}
-                    className={`absolute bottom-3 right-3 z-30 px-2 py-1 rounded-lg text-[10px] font-bold shadow-xs border transition-all ${
+                    className={`absolute bottom-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all z-10 cursor-pointer ${
                       compareItems.some(i => i.id === item.id)
-                        ? 'bg-[#1A1A2E] text-white border-[#1A1A2E]'
-                        : 'bg-white/95 backdrop-blur-xs text-[#1A1A2E] border-[#E5E2DD] hover:bg-[#F7F5F2]'
+                        ? 'bg-[#E8602C] text-white border-[#E8602C] shadow-xs'
+                        : 'bg-white/90 dark:bg-[#131728]/90 text-[#6B7280] dark:text-[#9CA3AF] border-[#E5E2DD] dark:border-[#272E49] hover:border-[#E8602C]'
                     }`}
                   >
-                    {compareItems.some(i => i.id === item.id) ? '✓ In Compare' : '+ Compare'}
+                    {compareItems.some(i => i.id === item.id) ? '✓ Comparing' : '+ Compare'}
                   </button>
                 </div>
               ))}
@@ -471,7 +454,8 @@ function ExploreContent() {
 export default function ExplorePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1" style={{ paddingTop: '72px' }}>
+      <Navbar />
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full" style={{ paddingTop: '96px', paddingBottom: '48px' }}>
         <Suspense fallback={<div className="p-12 text-center text-sm">Loading campus marketplace...</div>}>
           <ExploreContent />
         </Suspense>

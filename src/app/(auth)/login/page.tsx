@@ -79,11 +79,16 @@ function LoginContent() {
 
         /* Right panel */
         .lp-right {
-          flex:1; background:#F4F1ED;
+          flex:1; background:#0B0E17;
           display:flex; align-items:center; justify-content:center;
           padding:40px 32px; overflow-y:auto;
         }
-        .lp-form-box { width:100%; max-width:420px; }
+        .lp-form-box {
+          width:100%; max-width:440px;
+          background:#131728; border:1px solid #272E49;
+          border-radius:24px; padding:40px 36px;
+          box-shadow:0 12px 48px rgba(0,0,0,0.5);
+        }
 
         /* Logo */
         .lp-logo { display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:44px; }
@@ -107,21 +112,21 @@ function LoginContent() {
         .lp-feat-text { color:rgba(255,255,255,.6); font-size:.83rem; font-weight:500; }
 
         /* Form side */
-        .lp-form-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.8rem; color:#111128; margin-bottom:6px; }
-        .lp-form-sub { color:#6B7280; font-size:.85rem; margin-bottom:28px; }
+        .lp-form-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.8rem; color:#FFFFFF !important; margin-bottom:6px; }
+        .lp-form-sub { color:#94A3B8 !important; font-size:.85rem; margin-bottom:28px; }
 
         /* Form fields */
-        .lp-field { margin-bottom:16px; }
-        .lp-label { display:block; font-size:.78rem; font-weight:600; color:#374151; margin-bottom:6px; }
+        .lp-field { margin-bottom:18px; }
+        .lp-label { display:block; font-size:.8rem; font-weight:600; color:#FFFFFF !important; margin-bottom:8px; }
         .lp-input {
-          width:100%; padding:12px 14px;
-          border:1.5px solid #E8E3DC; border-radius:10px;
+          width:100%; padding:13px 16px;
+          border:1.5px solid #272E49 !important; border-radius:12px;
           font-size:.875rem; font-family:'Inter',sans-serif;
-          color:#111128; background:white; outline:none;
+          color:#FFFFFF !important; background:#1A1F36 !important; outline:none;
           transition:border-color .2s, box-shadow .2s;
         }
-        .lp-input::placeholder { color:#9CA3AF; }
-        .lp-input:focus { border-color:#E8602C; box-shadow:0 0 0 3px rgba(232,96,44,.1); }
+        .lp-input::placeholder { color:#64748B !important; }
+        .lp-input:focus { border-color:#E8602C !important; box-shadow:0 0 0 3px rgba(232,96,44,.2); }
 
         .lp-submit {
           width:100%; padding:14px;
@@ -141,23 +146,14 @@ function LoginContent() {
         }
         @keyframes lp-spin { to { transform:rotate(360deg); } }
 
-        .lp-error { padding:11px 14px; border-radius:10px; background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; font-size:.82rem; margin-bottom:16px; }
-        .lp-register { text-align:center; margin-top:20px; font-size:.83rem; color:#9CA3AF; }
+        .lp-error { padding:11px 14px; border-radius:10px; background:#2A1414; border:1px solid #5A2020; color:#EF4444; font-size:.82rem; margin-bottom:16px; font-weight:600; }
+        .lp-register { text-align:center; margin-top:20px; font-size:.83rem; color:#94A3B8; }
         .lp-register a { color:#E8602C; font-weight:700; text-decoration:none; }
         .lp-register a:hover { text-decoration:underline; }
 
-        .lp-privacy {
-          margin-top:20px; padding:13px 16px; border-radius:12px;
-          background:#ECFDF5; border:1px solid #A7F3D0;
-          display:flex; gap:10px; align-items:flex-start;
-        }
-        .lp-privacy-icon { font-size:1rem; flex-shrink:0; margin-top:1px; }
-        .lp-privacy-title { font-size:.72rem; font-weight:700; color:#065F46; margin-bottom:3px; }
-        .lp-privacy-text { font-size:.7rem; color:#047857; line-height:1.6; }
-
         @media (max-width:768px) {
           .lp-left { display:none; }
-          .lp-right { background:#F4F1ED; }
+          .lp-right { background:#0B0E17; padding:24px 16px; }
         }
       `}</style>
 
@@ -243,16 +239,6 @@ function LoginContent() {
             <p className="lp-register">
               Don't have an account? <Link href="/register">Create an Account →</Link>
             </p>
-
-            <div className="lp-privacy">
-              <span className="lp-privacy-icon">🔒</span>
-              <div>
-                <div className="lp-privacy-title">Secure & Verified</div>
-                <p className="lp-privacy-text">
-                  Your hostel and personal data are protected. Handover trades are secured via real-time 6-digit OTP verification.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

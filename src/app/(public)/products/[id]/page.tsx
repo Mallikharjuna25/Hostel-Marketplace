@@ -3,6 +3,7 @@
 import React, { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import { AIBadge } from '@/components/ui/AIBadge'
 import { AIBuyingAnalysis } from '@/components/ai/AIBuyingAnalysis'
@@ -186,8 +187,9 @@ export default function ProductDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background" style={{ paddingTop: '80px' }}>
-        <main className="flex-1 max-w-7xl mx-auto px-4 py-12 w-full">
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 max-w-7xl mx-auto px-4 py-12 w-full" style={{ paddingTop: '90px' }}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 h-96 skeleton rounded-3xl" />
             <div className="lg:col-span-5 space-y-4">
@@ -205,10 +207,11 @@ export default function ProductDetailPage({
 
   if (error || !listing) {
     return (
-      <div className="min-h-screen flex flex-col bg-background" style={{ paddingTop: '80px' }}>
-        <main className="flex-1 max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
-          <h2 className="font-heading font-bold text-2xl text-[#1A1A2E]">{error || 'Listing not found'}</h2>
-          <p className="text-xs text-[#6B7280]">The item may have been completed, expired, or removed.</p>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 max-w-7xl mx-auto px-4 py-20 text-center space-y-4" style={{ paddingTop: '90px' }}>
+          <h2 className="font-heading font-bold text-2xl text-[#1A1A2E] dark:text-white">{error || 'Listing not found'}</h2>
+          <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">The item may have been completed, expired, or removed.</p>
           <Link href="/explore" className="inline-block px-4 py-2 rounded-xl bg-[#E8602C] text-white text-xs font-semibold">
             Back to Marketplace
           </Link>
@@ -256,36 +259,37 @@ export default function ProductDetailPage({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full" style={{ paddingTop: '80px' }}>
+      <Navbar />
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full" style={{ paddingTop: '90px' }}>
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-[#6B7280] mb-6">
-          <Link href="/" className="hover:text-[#1A1A2E]">Home</Link>
+        <div className="flex items-center gap-2 text-xs text-[#6B7280] dark:text-[#9CA3AF] mb-6">
+          <Link href="/" className="hover:text-[#1A1A2E] dark:hover:text-white">Home</Link>
           <span>/</span>
-          <Link href="/explore" className="hover:text-[#1A1A2E]">Marketplace</Link>
+          <Link href="/explore" className="hover:text-[#1A1A2E] dark:hover:text-white">Marketplace</Link>
           <span>/</span>
-          <Link href={`/explore?category=${category}`} className="hover:text-[#1A1A2E]">{category}</Link>
+          <Link href={`/explore?category=${category}`} className="hover:text-[#1A1A2E] dark:hover:text-white">{category}</Link>
           <span>/</span>
-          <span className="text-[#1A1A2E] truncate font-medium max-w-xs">{listing.title}</span>
+          <span className="text-[#1A1A2E] dark:text-white truncate font-medium max-w-xs">{listing.title}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Image Gallery & AI Condition Analysis */}
           <div className="lg:col-span-7 space-y-6">
             {/* Main Photo Viewer */}
-            <div className="relative rounded-3xl bg-[#FAF8F5] border border-[#E5E2DD] overflow-hidden flex items-center justify-center min-h-[380px] max-h-[460px]">
+            <div className="relative rounded-3xl bg-[#FAF8F5] dark:bg-[#131728] border border-[#E5E2DD] dark:border-[#272E49] overflow-hidden flex items-center justify-center min-h-[380px] max-h-[460px]">
               {listing.images && listing.images.length > 0 && listing.images[selectedImageIndex]?.url ? (
                 <img
                   src={listing.images[selectedImageIndex].url}
                   alt={listing.title}
-                  className="w-full h-full object-contain max-h-[460px] bg-[#111128]/5"
+                  className="w-full h-full object-contain max-h-[460px] bg-black/5"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF8F5] to-[#EAE6DF]">
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF8F5] to-[#EAE6DF] dark:from-[#131728] dark:to-[#0F1322]">
                   <span className="text-6xl mb-3">
                     {getEmoji(category, mode)}
                   </span>
-                  <span className="font-heading font-semibold text-lg text-[#1A1A2E]">{listing.title}</span>
-                  <span className="text-xs text-[#6B7280] mt-1">{category} · {locationText}</span>
+                  <span className="font-heading font-semibold text-lg text-[#1A1A2E] dark:text-white">{listing.title}</span>
+                  <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-1">{category} · {locationText}</span>
                 </div>
               )}
 

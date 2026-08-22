@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useTheme } from '@/components/theme/ThemeProvider'
 
 interface UserSession {
   id: string; email: string; role: string; isVerified: boolean
@@ -13,14 +14,15 @@ const trustVal = (t: UserSession['trustScore']) => typeof t === 'number' ? t : (
 
 const NAV_LINKS = [
   { href: '/explore', label: 'Explore' },
-  { href: '/explore?mode=all', label: '6 Ways to Trade' },
-  { href: '/#how-it-works', label: 'How It Works' },
-  { href: '/explore?trust=true', label: 'Trust & Safety' },
+  { href: '/ways-to-trade', label: '6 Ways to Trade' },
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/how-it-works#trust', label: 'Trust & Safety' },
 ]
 
 export function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
+  const { theme, toggleTheme } = useTheme()
   const [user, setUser] = useState<UserSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
@@ -42,11 +44,30 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', fn)
   }, [])
 
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/users/me', {
+        cache: 'no-store',
+        credentials: 'include',
+      })
+      if (res.ok) {
+        const d = await res.json()
+        setUser(d)
+      } else {
+        setUser(null)
+      }
+    } catch {
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const fetchNotifs = async () => {
     if (!user) return
     try {
       setLoadingNotifs(true)
-      const res = await fetch('/api/notifications')
+      const res = await fetch('/api/notifications', { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setNotifCount(data?.unread ?? 0)
@@ -62,13 +83,17 @@ export function Navbar() {
   }
 
   useEffect(() => {
-    fetch('/api/users/me').then(r => r.ok ? r.json() : null).then(d => { setUser(d); setLoading(false) }).catch(() => setLoading(false))
-  }, [pathname])
+    if (!isAuthPage) {
+      checkAuth()
+    } else {
+      setLoading(false)
+    }
+  }, [pathname, isAuthPage])
 
   useEffect(() => {
     if (user) {
       fetchNotifs()
-      const interval = setInterval(fetchNotifs, 10000)
+      const interval = setInterval(fetchNotifs, 8000)
       return () => clearInterval(interval)
     }
   }, [user])
@@ -217,6 +242,46 @@ export function Navbar() {
         .nb-login.on-page { color:#4B5563; }
         .nb-login.on-page:hover { color:#111128; background:#F4F1ED; }
 
+        /* Dark theme support for Navbar */
+        .dark .nb-root.page-solid { background: rgba(19, 23, 40, 0.95); border-bottom: 1px solid #272E49; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+        .dark .nb-link.on-page { color: #9CA3AF; }
+        .dark .nb-link.on-page:hover { color: #F3F4F6; background: #1A1F36; }
+        .dark .nb-login.on-page { color: #D1D5DB; }
+        .dark .nb-login.on-page:hover { color: #FFFFFF; background: #1A1F36; }
+        .dark .nb-dropdown { background: #131728; border-color: #272E49; box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+        .dark .nb-dd-header { border-bottom-color: #272E49; }
+        .dark .nb-dd-name { color: #F3F4F6; }
+        .dark .nb-dd-item { color: #D1D5DB; }
+        .dark .nb-dd-item:hover { background: #1A1F36; color: #E8602C; }
+        .dark .nb-dd-divider { background: #272E49; }
+        .dark .nb-notif-dropdown { background: #131728; border-color: #272E49; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
+        .dark .nb-notif-head { background: #1A1F36; border-bottom-color: #272E49; }
+        .dark .nb-notif-title { color: #F3F4F6; }
+        .dark .nb-notif-item { border-bottom-color: #1E2338; }
+        .dark .nb-notif-item:hover { background: #1A1F36; }
+        .dark .nb-notif-item.unread { background: rgba(232,96,44,0.12); }
+        .dark .nb-notif-item-title { color: #F3F4F6; }
+        .dark .nb-notif-item-msg { color: #9CA3AF; }
+        .dark .nb-avatar-btn.on-page:hover { background: #1A1F36; }
+        .dark .nb-notif.on-page:hover { background: #1A1F36; }
+        .dark .nb-mobile-menu-inner { background: #131728; border-top-color: #272E49; }
+        .dark .nb-mobile-link { color: #D1D5DB; }
+        .dark .nb-mobile-link:hover { background: #1A1F36; color: #E8602C; }
+
+        /* Theme Toggle Button */
+        .nb-theme-btn {
+          width: 34px; height: 34px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          background: transparent; border: 1px solid transparent;
+          cursor: pointer; transition: all .15s; font-size: 15px;
+        }
+        .nb-theme-btn.on-hero { color: white; }
+        .nb-theme-btn.on-hero:hover { background: rgba(255,255,255,.12); }
+        .nb-theme-btn.on-page { color: #4B5563; border-color: #E5E2DD; background: #FAF8F5; }
+        .nb-theme-btn.on-page:hover { color: #111128; border-color: #E8602C; background: #FFFFFF; }
+        .dark .nb-theme-btn.on-page { color: #F3F4F6; border-color: #272E49; background: #1A1F36; }
+        .dark .nb-theme-btn.on-page:hover { border-color: #E8602C; background: #202742; }
+
         /* Mobile */
         .nb-mobile-btn { padding:7px; border-radius:8px; border:none; background:transparent; cursor:pointer; display:none; align-items:center; justify-content:center; transition:background .15s; }
         @media(max-width:768px) { .nb-mobile-btn { display:flex; } .nb-cta { display:none; } }
@@ -247,8 +312,8 @@ export function Navbar() {
           <Link href="/" className="nb-logo">
             <div className="nb-logo-icon">H</div>
             <div className="nb-logo-text">
-              <span className="nb-logo-name" style={{ color: isHero ? 'white' : '#111128' }}>Hostel Market</span>
-              <span className="nb-logo-sub" style={{ color: isHero ? 'rgba(255,255,255,.35)' : '#9CA3AF' }}>CAMPUS EXCHANGE</span>
+              <span className="nb-logo-name" style={{ color: isHero ? 'white' : 'var(--text-main)' }}>Hostel Market</span>
+              <span className="nb-logo-sub" style={{ color: isHero ? 'rgba(255,255,255,.35)' : 'var(--text-muted)' }}>CAMPUS EXCHANGE</span>
             </div>
           </Link>
 
@@ -265,7 +330,7 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* Right */}
+          {/* Right side CTA / Profile */}
           <div className="nb-right">
             {!loading && user && (
               <Link href="/listings/new" className="nb-cta">+ List Something</Link>
@@ -279,7 +344,7 @@ export function Navbar() {
                   className={`nb-notif ${isHero ? 'on-hero' : 'on-page'}`}
                   aria-label="Notifications"
                 >
-                  <svg width="20" height="20" fill="none" stroke={isHero ? 'rgba(255,255,255,.85)' : '#1A1A2E'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <svg width="20" height="20" fill="none" stroke={isHero ? 'rgba(255,255,255,.85)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                     <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {notifCount > 0 && (
@@ -345,7 +410,7 @@ export function Navbar() {
                     {user.profile?.fullName?.charAt(0) || user.email.charAt(0).toUpperCase()}
                   </div>
                   <div className="nb-avatar-info" style={{ display: 'none' }}>
-                    <div className="nb-avatar-name" style={{ color: isHero ? 'white' : '#111128' }}>
+                    <div className="nb-avatar-name" style={{ color: isHero ? 'white' : 'var(--text-main)' }}>
                       {user.profile?.fullName?.split(' ')[0] || 'Student'}
                     </div>
                     <div className="nb-avatar-trust" style={{ color: isHero ? 'rgba(255,255,255,.5)' : '#9CA3AF' }}>
@@ -380,11 +445,7 @@ export function Navbar() {
               </div>
             ) : (
               <>
-                <Link href="/login" className={`nb-login ${isHero ? 'on-hero' : 'on-page'}`} style={{ display: 'none' as any }}>
-                  Log In
-                </Link>
-                <style>{`.nb-login-show { display: flex !important; }`}</style>
-                <Link href="/login" className={`nb-login nb-login-show ${isHero ? 'on-hero' : 'on-page'}`}>
+                <Link href="/login" className={`nb-login ${isHero ? 'on-hero' : 'on-page'}`}>
                   Log In
                 </Link>
                 <Link href="/register" className="nb-cta">Sign Up</Link>
@@ -396,7 +457,7 @@ export function Navbar() {
               className={`nb-mobile-btn ${isHero ? 'on-hero' : 'on-page'}`}
               onClick={() => setMobileOpen(p => !p)}
             >
-              <svg width="20" height="20" fill="none" stroke={isHero ? 'rgba(255,255,255,.85)' : '#374151'} strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+              <svg width="20" height="20" fill="none" stroke={isHero ? 'rgba(255,255,255,.85)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
                 {mobileOpen
                   ? <path d="M6 18L18 6M6 6l12 12" />
                   : <path d="M4 6h16M4 12h16M4 18h16" />}
