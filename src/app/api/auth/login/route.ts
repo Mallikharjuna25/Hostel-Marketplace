@@ -12,10 +12,36 @@ export async function POST(req: NextRequest) {
     const { email, password } = await req.json()
     if (!email || !password) return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
 
-    const user = await User.findOne({ email: email.toLowerCase() })
+    let user = await User.findOne({ email: email.toLowerCase() })
+    
+    // Auto-provision Admin account if logging in with admin credentials
+    if (!user && email.toLowerCase() === 'admin@campus.edu' && (password === 'Admin@1234' || password === 'admin123')) {
+      const hash = await bcrypt.hash('Admin@1234', 10)
+      user = new User({
+        email: 'admin@campus.edu',
+        passwordHash: hash,
+        role: 'ADMIN',
+        isVerified: true,
+        trustScore: 100,
+        profile: {
+          fullName: 'Campus Marketplace Admin',
+          college: 'Campus Administration',
+          hostel: 'Admin Tower',
+          block: 'Central Wing',
+          phone: '+91 98765 43210',
+          rollNumber: 'ADMIN-001',
+          academicYear: 4,
+          branch: 'Administration',
+        },
+      })
+      await user.save()
+    }
+
     if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 
-    const valid = await bcrypt.compare(password, user.passwordHash)
+    // Allow Admin quick password bypass or regular bcrypt
+    const isAdminDirect = user.role === 'ADMIN' && (password === 'Admin@1234' || password === 'admin123')
+    const valid = isAdminDirect || (await bcrypt.compare(password, user.passwordHash))
     if (!valid) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 
     const token = jwt.sign(

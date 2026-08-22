@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
+import { CampusAntiFraudAgreement } from '@/components/legal/CampusAntiFraudAgreement'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const [resending, setResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [policyAgreed, setPolicyAgreed] = useState(false)
 
   // Step 1 State: Account
   const [step1, setStep1] = useState({
@@ -340,10 +342,17 @@ export default function RegisterPage() {
                 />
               </div>
 
+              {/* Campus Anti-Fraud & Compensation Policy */}
+              <CampusAntiFraudAgreement
+                checked={policyAgreed}
+                onChange={setPolicyAgreed}
+                label="I agree to the Campus Code of Conduct and acknowledge that false products or fraud lead to immediate fines and mandatory buyer compensation."
+              />
+
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-sm hover:bg-[#CF4F20] transition-colors disabled:opacity-50"
+                disabled={loading || !policyAgreed}
+                className="w-full py-3 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-sm hover:bg-[#CF4F20] transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {loading ? 'Saving...' : 'Next: Identity →'}
               </button>

@@ -75,3 +75,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    await connectDB()
+    const { searchParams } = new URL(req.url)
+    const transactionId = searchParams.get('transactionId')
+    const userId = searchParams.get('userId')
+
+    const filter: any = {}
+    if (transactionId) filter.transactionId = transactionId
+    if (userId) filter.revieweeId = userId
+
+    const reviews = await Review.find(filter)
+      .populate('reviewerId', 'profile')
+      .populate('revieweeId', 'profile')
+      .sort({ createdAt: -1 })
+      .lean()
+
+    return NextResponse.json({
+      reviews: reviews.map((r: any) => ({
+        id: r._id.toString(),
+        transactionId: r.transactionId?.toString(),
+        reviewerId: r.reviewerId?._id?.toString(),
+        reviewerName: r.reviewerId?.profile?.fullName || 'Student Peer',
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+      })),
+    })
+  } catch (err) {
+    console.error('[reviews GET]', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}

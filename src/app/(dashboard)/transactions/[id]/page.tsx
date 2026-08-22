@@ -61,6 +61,14 @@ export default function TransactionDetailPage({
   const [showPaymentGatewayModal, setShowPaymentGatewayModal] = useState(false)
   const [gatewayProcessing, setGatewayProcessing] = useState(false)
 
+  // Receiver Feedback & Rating State
+  const [receiverRating, setReceiverRating] = useState(5)
+  const [receiverComment, setReceiverComment] = useState('')
+  const [existingReview, setExistingReview] = useState<any>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState<string | null>(null)
+  const [antiFraudAgreed, setAntiFraudAgreed] = useState(false)
+
   const scrollToBottom = () => {
     if (chatScrollRef.current) {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
@@ -69,10 +77,11 @@ export default function TransactionDetailPage({
 
   const loadData = async () => {
     try {
-      const [txRes, userRes, msgRes] = await Promise.all([
+      const [txRes, userRes, msgRes, revRes] = await Promise.all([
         fetch(`/api/transactions/${id}`),
         fetch('/api/users/me'),
         fetch(`/api/messages?transactionId=${id}`),
+        fetch(`/api/reviews?transactionId=${id}`),
       ])
 
       if (txRes.ok) {
@@ -102,11 +111,50 @@ export default function TransactionDetailPage({
           setMessages(msgData.messages)
         }
       }
+
+      if (revRes.ok) {
+        const revData = await revRes.json()
+        if (revData.reviews && revData.reviews.length > 0) {
+          setExistingReview(revData.reviews[0])
+        }
+      }
     } catch (err) {
       console.error(err)
       setError('Failed to load transaction.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmittingReview(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionId: id,
+          rating: receiverRating,
+          comment: receiverComment,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setReviewSuccessMsg('⭐ Review submitted! Thank you for rating the seller.')
+        setExistingReview({
+          rating: receiverRating,
+          comment: receiverComment,
+          reviewerName: currentUser?.profile?.fullName || 'You',
+          createdAt: new Date(),
+        })
+      } else {
+        alert(data.error || 'Failed to submit review')
+      }
+    } catch {
+      alert('Error submitting review')
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -345,25 +393,142 @@ export default function TransactionDetailPage({
         </div>
 
         {/* ═════════════════════════════════════════════════════════
-            STATE 1: COMPLETED TRANSACTION BANNER
+            STATE 1: COMPLETED TRANSACTION BANNER & RECEIVER REVIEW
         ═════════════════════════════════════════════════════════ */}
         {isCompleted ? (
-          <div className="theme-card rounded-3xl p-8 text-center space-y-3 border-2 border-[#10B981] shadow-2xl">
-            <span className="text-5xl block">🎉</span>
-            <h2 className="font-heading font-extrabold text-2xl text-[#10B981]">
-              Handover Verified &amp; Completed!
-            </h2>
-            <p className="text-xs theme-muted max-w-md mx-auto leading-relaxed">
-              The single-use OTP code was successfully verified in person. The product has been transferred and trust scores for both students have increased!
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/dashboard"
-                className="inline-block px-6 py-2.5 rounded-xl bg-[#10B981] text-white font-bold text-xs shadow-xs hover:bg-[#059669] transition-colors"
-              >
-                Back to Dashboard →
-              </Link>
+          <div className="space-y-6">
+            <div className="theme-card rounded-3xl p-8 text-center space-y-3 border-2 border-[#10B981] shadow-2xl">
+              <span className="text-5xl block">🎉</span>
+              <h2 className="font-heading font-extrabold text-2xl text-[#10B981]">
+                Handover Verified &amp; Completed!
+              </h2>
+              <p className="text-xs theme-muted max-w-md mx-auto leading-relaxed">
+                The single-use OTP code was successfully verified in person. The product has been transferred and trust scores for both students have increased!
+              </p>
+              <div className="pt-2 flex items-center justify-center gap-3">
+                <Link
+                  href="/dashboard"
+                  className="inline-block px-6 py-2.5 rounded-xl bg-[#10B981] text-white font-bold text-xs shadow-xs hover:bg-[#059669] transition-colors"
+                >
+                  Back to Dashboard →
+                </Link>
+                <Link
+                  href="/explore"
+                  className="inline-block px-5 py-2.5 rounded-xl theme-card-alt border text-xs font-bold theme-title"
+                  style={{ borderColor: 'var(--border-color)' }}
+                >
+                  Browse Marketplace
+                </Link>
+              </div>
             </div>
+
+            {/* ─── RECEIVER FEEDBACK & PRODUCT RATING SECTION ─── */}
+            {!isSeller && (
+              <div className="theme-card rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl border" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <h3 className="font-heading font-bold text-base theme-title">
+                        Receiver Product Feedback &amp; Seller Rating
+                      </h3>
+                      <p className="text-xs theme-muted">
+                        Rate the working condition and experience to update the seller's campus trust score.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold badge-blue">
+                    Receiver Review
+                  </span>
+                </div>
+
+                {existingReview ? (
+                  <div className="p-5 rounded-2xl theme-card-alt space-y-3 border" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base text-[#FBBF24]">
+                          {'★'.repeat(existingReview.rating || 5)}{'☆'.repeat(5 - (existingReview.rating || 5))}
+                        </span>
+                        <span className="text-xs font-bold theme-title">
+                          ({existingReview.rating}/5 Stars)
+                        </span>
+                      </div>
+                      <span className="text-[10px] badge-green px-2 py-0.5 rounded-full font-bold">
+                        ✓ Verified Purchase Review
+                      </span>
+                    </div>
+
+                    <p className="text-xs theme-title leading-relaxed italic bg-[#0B0E17] p-3 rounded-xl border" style={{ borderColor: 'var(--border-color)' }}>
+                      "{existingReview.comment || 'Item was in expected working condition.'}"
+                    </p>
+
+                    <div className="text-[10px] theme-muted flex items-center justify-between pt-1">
+                      <span>Reviewed by {existingReview.reviewerName || 'You (Receiver)'}</span>
+                      <span>{existingReview.createdAt ? new Date(existingReview.createdAt).toLocaleDateString() : 'Recently'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmitReview} className="space-y-4">
+                    {/* Star Selector */}
+                    <div>
+                      <label className="block text-xs font-bold theme-title mb-2">
+                        How accurately did the item match the description &amp; work in hostel?
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReceiverRating(star)}
+                            className={`text-2xl transition-transform hover:scale-125 cursor-pointer ${
+                              star <= receiverRating ? 'text-[#FBBF24]' : 'text-gray-600'
+                            }`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                        <span className="text-xs font-bold ml-2 theme-title">
+                          {receiverRating === 5 && '🌟 Excellent / Perfect Condition'}
+                          {receiverRating === 4 && '👍 Good / Working as Expected'}
+                          {receiverRating === 3 && '👌 Average / Minor Wear'}
+                          {receiverRating === 2 && '👎 Below Expectation'}
+                          {receiverRating === 1 && '⚠️ Faulty / Poor'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Feedback Comment */}
+                    <div>
+                      <label className="block text-xs font-bold theme-title mb-1.5">
+                        Product Feedback &amp; Verification Note:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={receiverComment}
+                        onChange={(e) => setReceiverComment(e.target.value)}
+                        placeholder="e.g. Tested in hostel room with my charger, working smoothly with all original accessories..."
+                        className="w-full px-4 py-3 rounded-xl theme-input text-xs focus:outline-none focus:border-[#E8602C] resize-none"
+                      />
+                    </div>
+
+                    {reviewSuccessMsg && (
+                      <div className="p-3 rounded-xl bg-[#064E3B] text-xs text-[#6EE7B7] font-bold text-center">
+                        {reviewSuccessMsg}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="px-6 py-3 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-xs hover:bg-[#CF4F20] transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <span>⭐</span>
+                      <span>{submittingReview ? 'Submitting Review...' : 'Submit Receiver Review & Award Trust Points'}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           /* ═════════════════════════════════════════════════════════

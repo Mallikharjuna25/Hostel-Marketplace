@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import { AIBadge } from '@/components/ui/AIBadge'
+import { CampusAntiFraudAgreement } from '@/components/legal/CampusAntiFraudAgreement'
 
 const CATEGORIES = [
   'Electronics',
@@ -72,6 +73,7 @@ export default function NewListingWizard() {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('Electronics')
   const [description, setDescription] = useState('')
+  const [legalAgreed, setLegalAgreed] = useState(false)
   const [condition, setCondition] = useState('GOOD')
   const [price, setPrice] = useState('')
   const [location, setLocation] = useState('Hostel 10, Block B')
@@ -791,6 +793,15 @@ export default function NewListingWizard() {
               )}
             </div>
 
+            {/* Anti-Fraud and Buyer Compensation Agreement */}
+            <div className="pt-2">
+              <CampusAntiFraudAgreement
+                checked={legalAgreed}
+                onChange={setLegalAgreed}
+                label="I guarantee all product details and working condition are authentic, and accept full compensation liability for fraudulent listings."
+              />
+            </div>
+
             {/* Publish Action Button */}
             <div className="flex items-center justify-end gap-3 pt-4">
               <Link
@@ -801,7 +812,7 @@ export default function NewListingWizard() {
               </Link>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !legalAgreed}
                 className="px-8 py-3.5 rounded-xl bg-[#E8602C] text-white font-heading font-bold text-sm hover:bg-[#CF4F20] transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? 'Publishing Item...' : '🚀 Publish Item on Marketplace'}

@@ -8,13 +8,15 @@ import { Footer } from '@/components/ui/Footer'
 
 export default function AdminConsolePage() {
   const router = useRouter()
-  const [activeNav, setActiveNav] = useState<'DASHBOARD' | 'TRANSACTIONS' | 'LISTINGS' | 'TRUST' | 'DISPUTES' | 'SETTINGS'>('TRANSACTIONS')
+  const [activeNav, setActiveNav] = useState<'DASHBOARD' | 'TRANSACTIONS' | 'STUDENTS' | 'LISTINGS' | 'TRUST' | 'DISPUTES' | 'SETTINGS'>('STUDENTS')
   const [activeHeaderTab, setActiveHeaderTab] = useState<'overview' | 'activity' | 'analytics'>('activity')
   const [searchQuery, setSearchQuery] = useState('')
   const [transactions, setTransactions] = useState<any[]>([])
   const [disputes, setDisputes] = useState<any[]>([])
-  const [totalVolume, setTotalVolume] = useState(4250)
-  const [activeExchanges, setActiveExchanges] = useState(14)
+  const [students, setStudents] = useState<any[]>([])
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
+  const [totalVolume, setTotalVolume] = useState(0)
+  const [activeExchanges, setActiveExchanges] = useState(0)
   const [loading, setLoading] = useState(true)
 
   // Trust score adjustment tool state
@@ -25,9 +27,10 @@ export default function AdminConsolePage() {
 
   const loadData = async () => {
     try {
-      const [txRes, disRes] = await Promise.all([
+      const [txRes, disRes, userRes] = await Promise.all([
         fetch('/api/admin/transactions'),
         fetch('/api/admin/disputes'),
+        fetch('/api/admin/users'),
       ])
 
       if (txRes.ok) {
@@ -41,10 +44,52 @@ export default function AdminConsolePage() {
         const disData = await disRes.json()
         setDisputes(disData.disputes || [])
       }
+
+      if (userRes.ok) {
+        const userData = await userRes.json()
+        setStudents(userData.users || [])
+      }
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleVerify = async (userId: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isVerified: !currentStatus }),
+      })
+      if (res.ok) {
+        setStudents(prev => prev.map(s => s.id === userId ? { ...s, isVerified: !currentStatus } : s))
+        if (selectedStudent && selectedStudent.id === userId) {
+          setSelectedStudent((prev: any) => ({ ...prev, isVerified: !currentStatus }))
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleUserTrustScoreChange = async (userId: string, currentScore: number, delta: number) => {
+    const newScore = Math.min(100, Math.max(0, currentScore + delta))
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, trustScore: newScore }),
+      })
+      if (res.ok) {
+        setStudents(prev => prev.map(s => s.id === userId ? { ...s, trustScore: newScore } : s))
+        if (selectedStudent && selectedStudent.id === userId) {
+          setSelectedStudent((prev: any) => ({ ...prev, trustScore: newScore }))
+        }
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -92,8 +137,9 @@ export default function AdminConsolePage() {
           {/* Navigation Links */}
           <nav className="space-y-1">
             {[
-              { id: 'DASHBOARD', icon: '📊', label: 'Dashboard' },
+              { id: 'STUDENTS', icon: '👥', label: 'All Students & Persons' },
               { id: 'TRANSACTIONS', icon: '💳', label: 'Transactions' },
+              { id: 'DASHBOARD', icon: '📊', label: 'Dashboard' },
               { id: 'LISTINGS', icon: '📦', label: 'Listings' },
               { id: 'TRUST', icon: '🛡️', label: 'Trust Scores' },
               { id: 'DISPUTES', icon: '⚠️', label: 'Disputes' },
@@ -164,6 +210,264 @@ export default function AdminConsolePage() {
               ))}
             </div>
           </div>
+
+          {/* ══════════════════════════════════════════════════
+              VIEW 0: ALL STUDENTS & PERSON DIRECTORY
+          ══════════════════════════════════════════════════ */}
+          {activeNav === 'STUDENTS' && (
+            <div className="space-y-6">
+              {/* Top Banner with Stats */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="font-heading font-extrabold text-2xl theme-title">
+                    👥 Student &amp; Person Directory
+                  </h1>
+                  <p className="text-xs theme-muted">
+                    Full campus records, roll numbers, hostel blocks, trust scores, and verification status for all users.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="theme-card px-4 py-2.5 rounded-2xl text-center shadow-xs">
+                    <span className="text-[10px] font-mono theme-muted uppercase tracking-wider block">TOTAL PERSONS</span>
+                    <span className="font-heading font-extrabold text-xl text-[#E8602C]">{students.length}</span>
+                  </div>
+                  <div className="theme-card px-4 py-2.5 rounded-2xl text-center shadow-xs">
+                    <span className="text-[10px] font-mono theme-muted uppercase tracking-wider block">ID VERIFIED</span>
+                    <span className="font-heading font-extrabold text-xl text-[#2D6A4F] dark:text-[#34D399]">
+                      {students.filter(s => s.isVerified).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Students Table */}
+              <div className="theme-card rounded-3xl p-6 space-y-4 shadow-xl border" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎓</span>
+                    <h3 className="font-heading font-bold text-sm theme-title">All Registered Campus Profiles</h3>
+                  </div>
+                  <span className="text-xs theme-muted">
+                    Showing {students.filter(s =>
+                      s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      s.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      s.hostel.toLowerCase().includes(searchQuery.toLowerCase())
+                    ).length} of {students.length} students
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="theme-muted uppercase tracking-wider border-b" style={{ borderColor: 'var(--border-color)' }}>
+                        <th className="pb-3 font-bold">Student / Person</th>
+                        <th className="pb-3 font-bold">Roll No. &amp; Dept</th>
+                        <th className="pb-3 font-bold">Hostel &amp; Room</th>
+                        <th className="pb-3 font-bold">Trust Score</th>
+                        <th className="pb-3 font-bold">ID Verified</th>
+                        <th className="pb-3 font-bold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y theme-title" style={{ borderColor: 'var(--border-color)' }}>
+                      {students
+                        .filter(s =>
+                          s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          s.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          s.hostel.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map(student => (
+                          <tr key={student.id} className="hover:bg-[#FAF8F5] dark:hover:bg-[#1A1F36] transition-colors">
+                            {/* Student Profile Info */}
+                            <td className="py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#E8602C] text-white flex items-center justify-center font-bold text-xs">
+                                  {student.fullName?.slice(0, 2).toUpperCase() || 'ST'}
+                                </div>
+                                <div>
+                                  <span className="font-bold block theme-title">{student.fullName}</span>
+                                  <span className="text-[11px] theme-muted">{student.email}</span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Roll Number & Dept */}
+                            <td className="py-3.5">
+                              <span className="font-mono font-bold block text-xs">{student.rollNumber || 'N/A'}</span>
+                              <span className="text-[11px] theme-muted">{student.branch || 'Student'} · Yr {student.academicYear || 1}</span>
+                            </td>
+
+                            {/* Hostel & Room */}
+                            <td className="py-3.5">
+                              <span className="font-semibold block">{student.hostel} {student.block ? `(${student.block})` : ''}</span>
+                              <span className="text-[11px] theme-muted">{student.room ? `Room ${student.room}` : 'Hostel Wing'}</span>
+                            </td>
+
+                            {/* Trust Score */}
+                            <td className="py-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                  student.trustScore >= 80 ? 'badge-green' :
+                                  student.trustScore >= 60 ? 'badge-orange' : 'badge-neutral text-red-400'
+                                }`}>
+                                  🛡️ {student.trustScore}/100
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleUserTrustScoreChange(student.id, student.trustScore, 5)}
+                                    title="Add +5 Trust"
+                                    className="px-1.5 py-0.5 rounded bg-[#10B981]/20 text-[#10B981] font-bold text-[10px] hover:bg-[#10B981]/30 cursor-pointer"
+                                  >
+                                    +5
+                                  </button>
+                                  <button
+                                    onClick={() => handleUserTrustScoreChange(student.id, student.trustScore, -5)}
+                                    title="Penalize -5 Trust"
+                                    className="px-1.5 py-0.5 rounded bg-[#EF4444]/20 text-[#EF4444] font-bold text-[10px] hover:bg-[#EF4444]/30 cursor-pointer"
+                                  >
+                                    -5
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* ID Verification Toggle */}
+                            <td className="py-3.5">
+                              <button
+                                onClick={() => handleToggleVerify(student.id, student.isVerified)}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                  student.isVerified
+                                    ? 'bg-[#10B981] text-white hover:bg-[#059669]'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                              >
+                                {student.isVerified ? '✓ Verified' : '○ Unverified'}
+                              </button>
+                            </td>
+
+                            {/* View Full Profile */}
+                            <td className="py-3.5 text-right">
+                              <button
+                                onClick={() => setSelectedStudent(student)}
+                                className="px-3 py-1.5 rounded-xl bg-[#E8602C] text-white text-[11px] font-bold hover:bg-[#CF4F20] transition-colors cursor-pointer"
+                              >
+                                View File →
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── FULL STUDENT FILE INSPECTION MODAL ─── */}
+          {selectedStudent && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+              <div className="theme-card rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl border border-[#E8602C]/40">
+                <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#E8602C] text-white flex items-center justify-center font-heading font-extrabold text-lg shadow-md">
+                      {selectedStudent.fullName?.slice(0, 2).toUpperCase() || 'ST'}
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-extrabold text-lg theme-title">{selectedStudent.fullName}</h3>
+                      <span className="text-xs theme-muted">{selectedStudent.email}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedStudent(null)}
+                    className="w-8 h-8 rounded-full theme-card-alt flex items-center justify-center text-xs font-bold hover:text-[#E8602C] cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Profile Details Grid */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Roll Number:</span>
+                    <strong className="theme-title">{selectedStudent.rollNumber || 'N/A'}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Phone Number:</span>
+                    <strong className="theme-title">{selectedStudent.phone || 'Private'}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Hostel &amp; Wing:</span>
+                    <strong className="theme-title">{selectedStudent.hostel} · {selectedStudent.block || ''}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Room Number:</span>
+                    <strong className="theme-title">{selectedStudent.room || 'Hostel Room'}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Academic Department:</span>
+                    <strong className="theme-title">{selectedStudent.branch} (Year {selectedStudent.academicYear})</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Institution / College:</span>
+                    <strong className="theme-title">{selectedStudent.college || 'Campus University'}</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Total Marketplace Trades:</span>
+                    <strong className="text-[#2D6A4F] dark:text-[#34D399] font-bold">{selectedStudent.totalTransactions || 0} Exchanged</strong>
+                  </div>
+                  <div className="p-3 rounded-xl theme-card-alt space-y-1">
+                    <span className="text-[10px] theme-muted uppercase font-bold block">Active Listings:</span>
+                    <strong className="text-[#E8602C] font-bold">{selectedStudent.totalListings || 0} Posted</strong>
+                  </div>
+                </div>
+
+                {/* Trust Score & ID Verification Controls */}
+                <div className="p-4 rounded-2xl bg-[#0B0E17] border space-y-3" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold theme-title">Campus Trust Rating:</span>
+                    <span className="font-heading font-extrabold text-base text-[#10B981]">
+                      {selectedStudent.trustScore}/100
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleUserTrustScoreChange(selectedStudent.id, selectedStudent.trustScore, 10)}
+                      className="flex-1 py-2 rounded-xl bg-[#10B981]/20 text-[#10B981] font-bold text-xs hover:bg-[#10B981]/30 cursor-pointer"
+                    >
+                      +10 Trust Bonus
+                    </button>
+                    <button
+                      onClick={() => handleUserTrustScoreChange(selectedStudent.id, selectedStudent.trustScore, -10)}
+                      className="flex-1 py-2 rounded-xl bg-[#EF4444]/20 text-[#EF4444] font-bold text-xs hover:bg-[#EF4444]/30 cursor-pointer"
+                    >
+                      -10 Dispute Penalty
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => handleToggleVerify(selectedStudent.id, selectedStudent.isVerified)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer ${
+                      selectedStudent.isVerified
+                        ? 'bg-gray-700 text-white hover:bg-gray-600'
+                        : 'bg-[#10B981] text-white hover:bg-[#059669]'
+                    }`}
+                  >
+                    {selectedStudent.isVerified ? 'Revoke Verification' : '✓ Mark Student Verified'}
+                  </button>
+                  <button
+                    onClick={() => setSelectedStudent(null)}
+                    className="px-5 py-2.5 rounded-xl bg-[#E8602C] text-white text-xs font-bold cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ══════════════════════════════════════════════════
               VIEW 1: TRANSACTION MONITORING

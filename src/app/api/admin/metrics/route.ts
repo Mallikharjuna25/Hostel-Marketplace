@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'hostel-marketplace-secret'
 
 function getUser(req: NextRequest) {
   try {
-    const token = req.cookies.get('token')?.value
+    const token = req.cookies.get('token')?.value || req.cookies.get('hm_session')?.value
     if (!token) return null
     return jwt.verify(token, JWT_SECRET) as { userId: string; role: string }
   } catch { return null }
